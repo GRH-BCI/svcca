@@ -42,30 +42,28 @@ channels.
 """
 
 
-
-
 import numpy as np
 import pandas as pd
 import svcca.cca_core as cca_core
 
 
 def fft_resize(images, resize=False, new_size=None):
-  """Function for applying DFT and resizing.
+    """Function for applying DFT and resizing.
 
   This function takes in an array of images, applies the 2-d fourier transform
   and resizes them according to new_size, keeping the frequencies that overlap
   between the two sizes.
 
   Args:
-            images: a numpy array with shape
-                    [batch_size, height, width, num_channels]
-            resize: boolean, whether or not to resize
-            new_size: a tuple (size, size), with height and width the same
+      images: a numpy array with shape
+      [batch_size, height, width, num_channels]
+      resize: boolean, whether or not to resize
+      new_size: a tuple (size, size), with height and width the same
 
   Returns:
-            im_fft_downsampled: a numpy array with shape
-                         [batch_size, (new) height, (new) width, num_channels]
-  """
+      im_fft_downsampled: a numpy array with shape
+      [batch_size, (new) height, (new) width, num_channels]
+      """
   assert len(images.shape) == 4, ("expecting images to be"
                                   "[batch_size, height, width, num_channels]")
 
