@@ -1,3 +1,10 @@
+# About this fork
+
+This is a python 3 port with some opinions on code style applied.
+
+---------
+
+# Original Readme
 
 Disclaimer: This is not an official Google product.
 
@@ -34,13 +41,13 @@ The [dft_ccas.py](dft_ccas.py) module builds on this functionality to work with 
 of the Discrete Fourier Transform, we have a computationally efficient method for comparing CCA similarity for convolutional layers. See Section 3 in the [paper](https://arxiv.org/pdf/1706.05806.pdf) for more details. The `fourier_ccas` function in
 [dft_ccas.py](dft_ccas.py) implements exactly this, taking the raw convolutional activations (num datapoints, height1, width1, num channels1), (num datapoints, height2, width2, num channels2)
 
-Note that according to the theory, we get an exact result if the datapoints used to _generate_ (not train) the activations are translation invariant (any 2d translation of a datapoint x is also in the set of datapoints). But even without this, we can get 
+Note that according to the theory, we get an exact result if the datapoints used to _generate_ (not train) the activations are translation invariant (any 2d translation of a datapoint x is also in the set of datapoints). But even without this, we can get
 very good results (see Examples section).
 
 
 ### Examples
 In the paper, we apply this method to understand several aspects of neural network representations, and we give a couple of examples below.
-* __Sensitivity to different classes__: we compare the CCA similarity of an output neuron corresponding to a particular class with the representations learned in intermediate layers on the Imagenet Resnet. We find that CCA similarity can distinguish between visually different classes (firetruck and dog breeds in the image below) and also show similarities between visually similar classes (husky and eskimo dog, two types of terriers). 
+* __Sensitivity to different classes__: we compare the CCA similarity of an output neuron corresponding to a particular class with the representations learned in intermediate layers on the Imagenet Resnet. We find that CCA similarity can distinguish between visually different classes (firetruck and dog breeds in the image below) and also show similarities between visually similar classes (husky and eskimo dog, two types of terriers).
 <p align="center">
     <img src="examples/Imagenet_class_similarity.png" width=700px>
 </p>
