@@ -1,19 +1,19 @@
 # Copyright 2016 Google Inc.
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the Apache License, Version 2.0 (the 'License');
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
+# distributed under the License is distributed on an 'AS IS' BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
 
-"""
+'''
 Code for use with large conv layers using DFT (discrete fourier transform).
 
 The functions in this script provide a scalable method for computing the cca
@@ -39,7 +39,7 @@ output the correlation of the vector with the dc component of the DFT.
 This can be seen as a lower bound on the correlation of the vector with the
 channels.
 
-"""
+'''
 
 
 import numpy as np
@@ -48,7 +48,7 @@ import svcca.cca_core as cca_core
 
 
 def fft_resize(images, resize=False, new_size=None):
-    """Function for applying DFT and resizing.
+    '''Function for applying DFT and resizing.
 
   This function takes in an array of images, applies the 2-d fourier transform
   and resizes them according to new_size, keeping the frequencies that overlap
@@ -63,18 +63,18 @@ def fft_resize(images, resize=False, new_size=None):
   Returns:
       im_fft_downsampled: a numpy array with shape
       [batch_size, (new) height, (new) width, num_channels]
-      """
-  assert len(images.shape) == 4, ("expecting images to be"
-                                  "[batch_size, height, width, num_channels]")
+      '''
+  assert len(images.shape) == 4, ('expecting images to be'
+                                  '[batch_size, height, width, num_channels]')
 
-  im_complex = images.astype("complex64")
+  im_complex = images.astype('complex64')
   im_fft = np.fft.fft2(im_complex, axes=(1, 2))
 
   # resizing images
   if resize:
     # get fourier frequencies to threshold
-    assert (im_fft.shape[1] == im_fft.shape[2]), ("Need images to have same"
-                                                  "height and width")
+    assert (im_fft.shape[1] == im_fft.shape[2]), ('Need images to have same'
+                                                  'height and width')
     # downsample by threshold
     width = im_fft.shape[2]
     new_width = new_size[0]
@@ -91,7 +91,7 @@ def fft_resize(images, resize=False, new_size=None):
 
 def fourier_ccas(conv_acts1, conv_acts2, return_coefs=False,
                  compute_dirns=False, verbose=False):
-  """Computes cca similarity between two conv layers with DFT.
+  '''Computes cca similarity between two conv layers with DFT.
 
   This function takes in two sets of convolutional activations, conv_acts1,
   conv_acts2 After resizing the spatial dimensions to be the same, applies fft
@@ -117,7 +117,7 @@ def fourier_ccas(conv_acts1, conv_acts2, return_coefs=False,
                          on the fly if compute_dirns=False), and summary
                          statistics. If compute_dirns=True, the cca directions
                          are also computed.
-  """
+  '''
 
   height1, width1 = conv_acts1.shape[1], conv_acts1.shape[2]
   height2, width2 = conv_acts2.shape[1], conv_acts2.shape[2]
@@ -146,20 +146,20 @@ def fourier_ccas(conv_acts1, conv_acts2, return_coefs=False,
 
       # apply inverse FFT to get coefficients and directions if specified
       if return_coefs:
-        results_dict["neuron_coeffs1"] = np.fft.ifft2(
-          results_dict["neuron_coeffs1"])
-        results_dict["neuron_coeffs2"] = np.fft.ifft2(
-          results_dict["neuron_coeffs2"])
+        results_dict['neuron_coeffs1'] = np.fft.ifft2(
+          results_dict['neuron_coeffs1'])
+        results_dict['neuron_coeffs2'] = np.fft.ifft2(
+          results_dict['neuron_coeffs2'])
       else:
-        del results_dict["neuron_coeffs1"]
-        del results_dict["neuron_coeffs2"]
+        del results_dict['neuron_coeffs1']
+        del results_dict['neuron_coeffs2']
 
       if compute_dirns:
-        results_dict["cca_dirns1"] = np.fft.ifft2(results_dict["cca_dirns1"])
-        results_dict["cca_dirns2"] = np.fft.ifft2(results_dict["cca_dirns2"])
+        results_dict['cca_dirns1'] = np.fft.ifft2(results_dict['cca_dirns1'])
+        results_dict['cca_dirns2'] = np.fft.ifft2(results_dict['cca_dirns2'])
 
       # accumulate results
-      results_dict["location"] = (i, j)
+      results_dict['location'] = (i, j)
       all_results = all_results.append(results_dict, ignore_index=True)
 
   return all_results
