@@ -30,9 +30,9 @@ See https://arxiv.org/abs/1706.05806 for full details.
 
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 import numpy as np
 
 num_cca_trials = 5
@@ -188,7 +188,7 @@ def sum_threshold(array, threshold):
   """
   assert (threshold >= 0) and (threshold <= 1), "print incorrect threshold"
 
-  for i in xrange(len(array)):
+  for i in range(len(array)):
     if np.sum(array[:i]) / np.sum(array) >= threshold:
       return i
 
@@ -354,7 +354,7 @@ def robust_cca_similarity(acts1, acts2, threshold=0.98, compute_dirns=True):
                          computed.
   """
 
-  for trial in xrange(num_cca_trials):
+  for trial in range(num_cca_trials):
     try:
       return_dict = get_cca_similarity(acts1, acts2, threshold, compute_dirns)
     except np.LinAlgError:
