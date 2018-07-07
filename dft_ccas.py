@@ -58,14 +58,14 @@ def fft_resize(images, resize=False, new_size=None):
 
     Args:
         images: a numpy array with shape
-        [batch_size, height, width, num_channels]
+                [batch_size, height, width, num_channels]
         resize: boolean, whether or not to resize
         new_size: a tuple (size, size), with height and width the same
 
     Returns:
         im_fft_downsampled: a numpy array with shape
-        [batch_size, (new) height, (new) width, num_channels]
-        '''
+                            [batch_size, (new) height, (new) width, num_channels]
+    '''
     assert len(images.shape) == 4, ('expecting images to be'
                                     '[batch_size, height, width, num_channels]')
 
@@ -94,43 +94,40 @@ def fourier_ccas(conv_acts1, conv_acts2, return_coefs=False,
     '''Computes cca similarity between two conv layers with DFT.
 
     This function takes in two sets of convolutional activations, conv_acts1,
-    conv_acts2 After resizing the spatial dimensions to be the same, applies fft
+    conv_acts2, after resizing the spatial dimensions to be the same, applies fft
     and then computes the ccas.
 
     Finally, it applies the inverse fourier transform to get the CCA directions
     and neuron coefficients.
 
     Args:
-        conv_acts1: numpy array with shape
-        [batch_size, height1, width1, num_channels1]
-        conv_acts2: numpy array with shape
-        [batch_size, height2, width2, num_channels2]
-        compute_dirns: boolean, used to determine whether results also
-        contain actual cca directions.
+        conv_acts1: numpy array with shape [batch_size, height1, width1, num_channels1]
+        conv_acts2: numpy array with shape [batch_size, height2, width2, num_channels2]
+        compute_dirns: boolean, used to determine whether results also contain actual cca
+                       directions.
 
     Returns:
         all_results: a pandas dataframe, with cca results for every spatial
-        location. Columns are neuron coefficients (combinations
-        of neurons that correspond to cca directions), the cca
-        correlation coefficients (how well aligned directions
-        correlate) x and y idxs (for computing cca directions
-        on the fly if compute_dirns=False), and summary
-        statistics. If compute_dirns=True, the cca directions
-        are also computed.
-        '''
-
+                     location. Columns are neuron coefficients (combinations
+                     of neurons that correspond to cca directions), the cca
+                     correlation coefficients (how well aligned directions
+                     correlate) x and y idxs (for computing cca directions
+                     on the fly if compute_dirns=False), and summary
+                     statistics. If compute_dirns=True, the cca directions
+                     are also computed.
+    '''
     height1, width1 = conv_acts1.shape[1], conv_acts1.shape[2]
     height2, width2 = conv_acts2.shape[1], conv_acts2.shape[2]
     if height1 != height2 or width1 != width2:
-        height = min(height1, height2)
-        width = min(width1, width2)
+        height   = min(height1, height2)
+        width    = min(width1, width2)
         new_size = [height, width]
-        resize = True
+        resize   = True
     else:
-        height = height1
-        width = width1
+        height   = height1
+        width    = width1
         new_size = None
-        resize = False
+        resize   = False
 
     # resize and preprocess with fft
     fft_acts1 = fft_resize(conv_acts1, resize=resize, new_size=new_size)
@@ -141,8 +138,11 @@ def fourier_ccas(conv_acts1, conv_acts2, return_coefs=False,
     for i in range(height):
         for j in range(width):
             results_dict = cca_core.get_cca_similarity(
-                fft_acts1[:, i, j, :].T, fft_acts2[:, i, j, :].T, compute_dirns,
-                verbose=verbose)
+                fft_acts1[:, i, j, :].T,
+                fft_acts2[:, i, j, :].T,
+                compute_dirns=compute_dirns,
+                verbose=verbose
+            )
 
             # apply inverse FFT to get coefficients and directions if specified
             if return_coefs:

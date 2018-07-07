@@ -125,7 +125,6 @@ def compute_ccas(sigma_xx, sigma_xy, sigma_yx, sigma_yy, verbose=True):
                             by remove_small
               y_idxs:       Same as above but for sigma_yy
     '''
-
     (sigma_xx, sigma_xy, sigma_yx, sigma_yy, x_idxs, y_idxs) = remove_small(
         sigma_xx, sigma_xy, sigma_yx, sigma_yy)
 
@@ -230,34 +229,34 @@ def get_cca_similarity(acts1, acts2, threshold=0.98, compute_dirns=True,
     coefficients, and (optionally) the actual directions.
 
     Args:
-              acts1: (num_neurons1, data_points) a 2d numpy array of neurons by
-                     datapoints where entry (i,j) is the output of neuron i on
-                     datapoint j.
-              acts2: (num_neurons2, data_points) same as above, but (potentially)
-                     for a different set of neurons. Note that acts1 and acts2
-                     can have different numbers of neurons, but must agree on the
-                     number of datapoints
+        acts1: (num_neurons1, data_points) a 2d numpy array of neurons by
+                datapoints where entry (i,j) is the output of neuron i on
+                datapoint j.
+        acts2: (num_neurons2, data_points) same as above, but (potentially)
+                for a different set of neurons. Note that acts1 and acts2
+                can have different numbers of neurons, but must agree on the
+                number of datapoints
 
-              threshold: float between 0, 1 used to get rid of trailing zeros in
-                         the cca correlation coefficients to output more accurate
-                         summary statistics of correlations.
+        threshold: float between 0, 1 used to get rid of trailing zeros in
+                    the cca correlation coefficients to output more accurate
+                    summary statistics of correlations.
 
-              compute_dirns: boolean value determining whether actual cca
-                             directions are computed. (For very large neurons and
-                             datasets, may be better to compute these on the fly
-                             instead of store in memory.)
+        compute_dirns: boolean value determining whether actual cca
+                        directions are computed. (For very large neurons and
+                        datasets, may be better to compute these on the fly
+                        instead of store in memory.)
 
-              verbose: Boolean, whether info about intermediate outputs printed
+        verbose: Boolean, whether info about intermediate outputs printed
 
     Returns:
-              return_dict: A dictionary with outputs from the cca computations.
-                           Contains neuron coefficients (combinations of neurons
-                           that correspond to cca directions), the cca correlation
-                           coefficients (how well aligned directions correlate),
-                           x and y idxs (for computing cca directions on the fly
-                           if compute_dirns=False), and summary statistics. If
-                           compute_dirns=True, the cca directions are also
-                           computed.
+        return_dict: A dictionary with outputs from the cca computations.
+                    Contains neuron coefficients (combinations of neurons
+                    that correspond to cca directions), the cca correlation
+                    coefficients (how well aligned directions correlate),
+                    x and y idxs (for computing cca directions on the fly
+                    if compute_dirns=False), and summary statistics. If
+                    compute_dirns=True, the cca directions are also
+                    computed.
     '''
 
     # assert dimensionality equal
