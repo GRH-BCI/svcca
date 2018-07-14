@@ -1,4 +1,5 @@
 import torch
+import utils
 
 num_cca_trials = 5
 epsilon = 1e-6
@@ -127,11 +128,11 @@ def get_cca_similarity_torch(acts1, acts2, threshold=0.98, compute_dirns=True,
 
     ([_, sx, vx], [_, sy, vy], invsqrt_xx, invsqrt_yy, x_idxs,
      y_idxs) = compute_ccas_torch(sigmaxx, sigmaxy, sigmayx, sigmayy,
-                            verbose)
+                                  verbose)
 
     # if x_idxs or y_idxs is all false, return_dict has zero entries
     if (not torch.any(x_idxs)) or (not torch.any(y_idxs)):
-        return create_zero_dict(compute_dirns, acts1.shape[1])
+        return create_zero_dict_torch(compute_dirns, acts1.shape[1])
 
     if compute_dirns:
         # orthonormal directions that are CCA directions
@@ -139,8 +140,8 @@ def get_cca_similarity_torch(acts1, acts2, threshold=0.98, compute_dirns=True,
         cca_dirns2 = torch.dot(vy, torch.dot(invsqrt_yy, acts2[y_idxs]))
 
     # get rid of trailing zeros in the cca coefficients
-    idx1 = sum_threshold(sx, threshold)
-    idx2 = sum_threshold(sy, threshold)
+    idx1 = sum_threshold_torch(sx, threshold)
+    idx2 = sum_threshold_torch(sy, threshold)
 
     return_dict['neuron_coeffs1'] = torch.dot(vx, invsqrt_xx)
     return_dict['neuron_coeffs2'] = torch.dot(vy, invsqrt_yy)

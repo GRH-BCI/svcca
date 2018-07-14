@@ -16,7 +16,7 @@ def fft_resize_torch(images, resize=False, new_size=None):
         width = im_fft.shape[2]
         new_width = new_size[0]
         freqs = utils.fftfreq(width, d=1.0 / width)
-        idxs = np.flatnonzero((freqs >= -new_width / 2.0) & (freqs < new_width / 2.0))
+        idxs = utils.flatnonzero((freqs >= -new_width / 2.0) & (freqs < new_width / 2.0))
         im_fft_downsampled = im_fft[:, :, idxs, :][:, idxs, :, :]
 
     else:

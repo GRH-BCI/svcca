@@ -17,6 +17,7 @@ def fftfreq(n, d=1.0):
     results[N:] = p2
     return results * val
 
+
 def cov(m, y=None):
 
     if m.ndimension > 2:
@@ -33,7 +34,7 @@ def cov(m, y=None):
         shape = [1] * (ndmin - len(shape)) + shape
     m = m.view(*shape)
     X = m.to(dtype=dtype)
-    if  X.shape[0] != 1:
+    if X.shape[0] != 1:
         X = X.t()
     if X.shape[0] == 0:
         return torch.tensor([]).reshape(0, 0)
@@ -65,3 +66,5 @@ def cov(m, y=None):
     return c.squeeze()
 
 
+def flatnonzero(tensor):
+    return torch.nonzero(tensor.view(-1))
