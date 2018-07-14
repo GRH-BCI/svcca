@@ -364,3 +364,19 @@ def robust_cca_similarity(acts1, acts2, threshold=0.98, compute_dirns=True):
                 raise
 
     return return_dict
+
+
+def cca_mean(cca_dict):
+    '''Compute the mean of canonical correlation coefficients'''
+    cca_coef1 = cca_dict.cca_coef1
+    cca_coef2 = cca_dict.cca_coef2
+    sum1 = sum2 = n1 = n2 = 0
+    for row in cca_coef1:
+        sum1 += row.mean()
+        n1 += 1
+
+    for row in cca_coef2:
+        sum2 += row.mean()
+        n2 += 1
+
+    return (sum1 + sum2) / (n1 + n2)
