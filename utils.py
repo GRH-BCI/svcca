@@ -60,4 +60,8 @@ def flatnonzero(tensor):
 
 
 def dot(a, b, out=None):
+    if a.ndimension() < 1 or b.ndimension() < 1:
+        raise ValueError('Torch matmul does not work with scalars.')
+    if a.ndimension() > 2 and b.ndimension() > 2:
+        raise ValueError('Torch matmul with multidimensional matrices currently unsupported.')
     return torch.matmul(a, b, out=out)
