@@ -3,48 +3,37 @@
 .. moduleauthor:: Rasmus Diederichsen
 '''
 import torch
+import numpy as np
 
 
 def fftfreq(n, d=1.0):
-    if not type(n) == int:
+    if not np.issubdtype(type(n), np.integer) and type(n) not in [int, torch.uint8, torch.int8,
+                                                                  torch.short, torch.int, torch.long]:
         raise ValueError(f'n should be an integer (is {type(n)})')
+    n = int(n)
+    d = float(d)
     val = 1.0 / (n * d)
-    results = torch.empty(n, int)
+    results = torch.empty(n, dtype=torch.float32)
     N = (n - 1) // 2 + 1
-    p1 = torch.arange(0, N, dtype=int)
+    p1 = torch.arange(0, N, dtype=torch.float32)
     results[:N] = p1
-    p2 = torch.arange(-(n // 2), 0, dtype=int)
+    p2 = torch.arange(-(n // 2), 0, dtype=torch.float32)
     results[N:] = p2
     return results * val
 
 
 def cov(m, y=None):
 
-    if m.ndimension > 2:
+    if m.ndimension() > 2:
         raise ValueError("m has more than 2 dimensions")
 
-    if y.ndimension > 2:
+    if y.ndimension() > 2:
         raise ValueError('y has more than 2 dimensions')
 
-    dtype = torch.float32
-
-    ndmin = 2
-    shape = m.shape
-    if len(shape) < 2:
-        shape = [1] * (ndmin - len(shape)) + shape
-    m = m.view(*shape)
-    X = m.to(dtype=dtype)
-    if X.shape[0] != 1:
-        X = X.t()
+    X = m
     if X.shape[0] == 0:
         return torch.tensor([]).reshape(0, 0)
     if y is not None:
-        shape = y.shape
-        if len(shape) < 2:
-            shape = [1] * (ndmin - len(shape)) + shape
-        y = y.view(*shape).to(dtype)
-        if y.shape[0] != 1:
-            y = y.t()
         X = torch.cat((X, y), dim=0)
 
     ddof = 1
@@ -61,10 +50,14 @@ def cov(m, y=None):
 
     X -= avg[:, None]
     X_T = X.t()
-    c = torch.dot(X, X_T)
+    c = dot(X, X_T)
     c *= 1. / fact
     return c.squeeze()
 
 
 def flatnonzero(tensor):
     return torch.nonzero(tensor.view(-1))
+
+
+def dot(a, b, out=None):
+    return torch.matmul(a, b, out=out)
