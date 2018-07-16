@@ -9,7 +9,7 @@ def positivedef_matrix_sqrt_torch(array):
     w, v = torch.eig(array)
     #  A - np.dot(v, np.dot(np.diag(w), v.T))
     wsqrt = torch.sqrt(w)
-    sqrtarray = torch.dot(v, torch.dot(torch.diag(wsqrt), torch.t(v)))
+    sqrtarray = utils.dot(v, utils.dot(torch.diag(wsqrt), torch.t(v)))
     return sqrtarray
 
 
@@ -55,10 +55,10 @@ def compute_ccas_torch(sigma_xx, sigma_xy, sigma_yx, sigma_yy, verbose=True):
         print('dot products...')
     arr_x = torch.ot(sigma_yx, invsqrt_xx)
     arr_x = torch.ot(inv_yy, arr_x)
-    arr_x = torch.ot(invsqrt_xx, torch.dot(sigma_xy, arr_x))
+    arr_x = torch.ot(invsqrt_xx, utils.dot(sigma_xy, arr_x))
     arr_y = torch.ot(sigma_xy, invsqrt_yy)
     arr_y = torch.ot(inv_xx, arr_y)
-    arr_y = torch.ot(invsqrt_yy, torch.dot(sigma_yx, arr_y))
+    arr_y = torch.ot(invsqrt_yy, utils.dot(sigma_yx, arr_y))
 
     if verbose:
         print('trying to take final svd')
@@ -136,15 +136,15 @@ def get_cca_similarity_torch(acts1, acts2, threshold=0.98, compute_dirns=True,
 
     if compute_dirns:
         # orthonormal directions that are CCA directions
-        cca_dirns1 = torch.dot(vx, torch.dot(invsqrt_xx, acts1[x_idxs]))
-        cca_dirns2 = torch.dot(vy, torch.dot(invsqrt_yy, acts2[y_idxs]))
+        cca_dirns1 = utils.dot(vx, utils.dot(invsqrt_xx, acts1[x_idxs]))
+        cca_dirns2 = utils.dot(vy, utils.dot(invsqrt_yy, acts2[y_idxs]))
 
     # get rid of trailing zeros in the cca coefficients
     idx1 = sum_threshold_torch(sx, threshold)
     idx2 = sum_threshold_torch(sy, threshold)
 
-    return_dict['neuron_coeffs1'] = torch.dot(vx, invsqrt_xx)
-    return_dict['neuron_coeffs2'] = torch.dot(vy, invsqrt_yy)
+    return_dict['neuron_coeffs1'] = utils.dot(vx, invsqrt_xx)
+    return_dict['neuron_coeffs2'] = utils.dot(vy, invsqrt_yy)
     return_dict['cca_coef1'] = sx
     return_dict['cca_coef2'] = sy
     return_dict['x_idxs'] = x_idxs
