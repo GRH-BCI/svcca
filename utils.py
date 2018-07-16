@@ -56,7 +56,7 @@ def cov(m, y=None):
 
 
 def flatnonzero(tensor):
-    return torch.nonzero(tensor.view(-1))
+    return torch.squeeze(torch.nonzero(tensor.view(-1)))
 
 
 def dot(a, b, out=None):
