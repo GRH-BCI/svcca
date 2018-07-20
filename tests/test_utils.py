@@ -83,6 +83,18 @@ class TestUtils(unittest.TestCase):
         # res_torch = utils.dot(torch.tensor(array_n), torch.tensor(array_m)).numpy()
         # self.assertTrue(np.allclose(res_np, res_torch))
 
+    def test_pycuda(self):
+        array = np.array([1, 2, 3, 4])
+        for dtype in [torch.uint8, torch.int16, torch.short, torch.int, torch.int32, torch.int64,
+                      torch.long, torch.float, torch.float32,
+                      torch.float64, torch.double]:
+            t = torch.tensor(array, dtype=dtype).cuda()
+            gpuarray = utils.tensor_to_gpuarray(t)
+            self.assertTrue(all(t * 2 == torch.tensor((gpuarray * 2).get()).cuda()))
+
+        for dtype in [torch.half, torch.float16]:
+            self.assertRaises(ValueError, lambda: utils.tensor_to_gpuarray(t))
+
 
 if __name__ == '__main__':
     unittest.main()
