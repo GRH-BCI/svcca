@@ -65,3 +65,69 @@ def dot(a, b, out=None):
     if a.ndimension() > 2 and b.ndimension() > 2:
         raise ValueError('Torch matmul with multidimensional matrices currently unsupported.')
     return torch.matmul(a, b, out=out)
+
+import pycuda.autoinit
+from pycuda.gpuarray import GPUArray
+from pycuda.driver import PointerHolderBase
+
+class Holder(PointerHolderBase):
+
+    def __init__(self, tensor):
+        super().__init__()
+        self.tensor = tensor
+        self.gpudata = tensor.data_ptr()
+
+    def get_pointer(self):
+        return self.tensor.data_ptr()
+
+    # without an __index__ method, arithmetic calls to the GPUArray backed by this pointer fail
+    # not sure why, this needs to return some integer, apparently
+    def __index__(self):
+        return self.gpudata
+
+
+def torch_dtype_to_numpy(dtype):
+    dtype_map = {
+        # signed integers
+        torch.int8: np.int8,
+        torch.int16: np.int16,
+        torch.short: np.int16,
+        torch.int32: np.int32,
+        torch.int: np.int32,
+        torch.int64: np.int64,
+        torch.long: np.int64,
+
+        # unsinged inters
+        torch.uint8: np.uint8,
+
+        # floating point
+        torch.float: np.float32,
+        torch.float32: np.float32,
+        torch.float16: np.float16,
+        torch.half: np.float16,
+        torch.float64: np.float64,
+        torch.double: np.float64
+    }
+
+    from pycuda.compyte.dtypes import dtype_to_ctype
+    if dtype not in dtype_map:
+        raise ValueError(f'{dtype} has no PyTorch equivalent')
+    else:
+        candidate = dtype_map[dtype]
+        # we can raise exception early by checking of the type can be used with pycuda. Otherwise
+        # we realize it only later when using the array
+        try:
+            _ = dtype_to_ctype(candidate)
+        except ValueError:
+            raise ValueError(f'{dtype} cannot be used in pycuda')
+        else:
+            return candidate
+
+
+def tensor_to_gpuarray(tensor):
+    if not tensor.is_cuda:
+        raise ValueError('Cannot convert CPU tensor to GPUArray (call `cuda()` on it)')
+    else:
+        array = GPUArray(tensor.shape, dtype=torch_dtype_to_numpy(tensor.dtype),
+                         gpudata=Holder(tensor))
+        return array
