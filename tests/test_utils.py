@@ -93,7 +93,13 @@ class TestUtils(unittest.TestCase):
             self.assertTrue(all(t * 2 == torch.tensor((gpuarray * 2).get()).cuda()))
 
         for dtype in [torch.half, torch.float16]:
+            t = torch.tensor(array, dtype=dtype).cuda()
             self.assertRaises(ValueError, lambda: utils.tensor_to_gpuarray(t))
+
+        tensor = torch.rand((4, 5, 6)).cuda()
+        gpuarray = utils.tensor_to_gpuarray(tensor) * 2
+        tensor2 = utils.gpuarray_to_tensor(gpuarray)
+        self.assertTrue((tensor * 2 == tensor2).all())
 
 
 if __name__ == '__main__':

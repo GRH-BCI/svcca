@@ -7,14 +7,15 @@ from cca_core_torch import get_cca_similarity_torch
 
 def fft_resize_torch(images, resize=False, new_size=None):
     assert len(images.shape) == 4, ('expecting images to be'
-                                    '[batch_size, height, width, num_channels]')
+                                    ' [batch_size, height, width, num_channels]')
 
+    gpuarray = utils.tensor_to_gpuarray(images)
     im_fft = torch.rfft(images, signal_ndim=2)
 
     # resizing images
     if resize:
         # get fourier frequencies to threshold
-        assert (im_fft.shape[1] == im_fft.shape[2]), ('Need images to have same' 'height and width')
+        assert (im_fft.shape[1] == im_fft.shape[2]), ('Need images to have same height and width')
         # downsample by threshold
         width = im_fft.shape[2]
         new_width = new_size[0]

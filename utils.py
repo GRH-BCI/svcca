@@ -85,29 +85,46 @@ class Holder(PointerHolderBase):
     def __index__(self):
         return self.gpudata
 
+# dict to map between torch and numpy dtypes
+dtype_map = {
+    # signed integers
+    torch.int8: np.int8,
+    torch.int16: np.int16,
+    torch.short: np.int16,
+    torch.int32: np.int32,
+    torch.int: np.int32,
+    torch.int64: np.int64,
+    torch.long: np.int64,
+
+    # unsinged inters
+    torch.uint8: np.uint8,
+
+    # floating point
+    torch.float: np.float32,
+    torch.float32: np.float32,
+    torch.float16: np.float16,
+    torch.half: np.float16,
+    torch.float64: np.float64,
+    torch.double: np.float64
+}
+
 
 def torch_dtype_to_numpy(dtype):
-    dtype_map = {
-        # signed integers
-        torch.int8: np.int8,
-        torch.int16: np.int16,
-        torch.short: np.int16,
-        torch.int32: np.int32,
-        torch.int: np.int32,
-        torch.int64: np.int64,
-        torch.long: np.int64,
+    '''Convert a torch ``dtype`` to an equivalent numpy ``dtype``, if it is also available in pycuda.
 
-        # unsinged inters
-        torch.uint8: np.uint8,
+    Parameters
+    ----------
+    dtype   :   np.dtype
 
-        # floating point
-        torch.float: np.float32,
-        torch.float32: np.float32,
-        torch.float16: np.float16,
-        torch.half: np.float16,
-        torch.float64: np.float64,
-        torch.double: np.float64
-    }
+    Returns
+    -------
+    torch.dtype
+
+    Raises
+    ------
+    ValueError
+        If there is not PyTorch equivalent, or the equivalent would not work with pycuda
+    '''
 
     from pycuda.compyte.dtypes import dtype_to_ctype
     if dtype not in dtype_map:
@@ -124,10 +141,65 @@ def torch_dtype_to_numpy(dtype):
             return candidate
 
 
+def numpy_dtype_to_torch(dtype):
+    '''Convert numpy ``dtype`` to torch ``dtype``. The first matching one will be returned, if there
+    are synonyms.
+
+    Parameters
+    ----------
+    dtype   :   torch.dtype
+
+    Returns
+    -------
+    np.dtype
+    '''
+    for dtype_t, dtype_n in dtype_map.items():
+        if dtype_n == dtype_t:
+            return dtype_t
+
+
 def tensor_to_gpuarray(tensor):
+    '''Convert a :class:`torch.Tensor` to a :class:`pycuda.gpuarray.GPUArray`. The underlying
+    storage will be shared, so that modifications to the array will reflect in the tensor object.
+
+    Parameters
+    ----------
+    tensor  :   torch.Tensor
+
+    Returns
+    -------
+    pycuda.gpuarray.GPUArray
+
+    Raises
+    ------
+    ValueError
+        If the ``tensor`` does not live on the gpu
+    '''
     if not tensor.is_cuda:
         raise ValueError('Cannot convert CPU tensor to GPUArray (call `cuda()` on it)')
     else:
         array = GPUArray(tensor.shape, dtype=torch_dtype_to_numpy(tensor.dtype),
                          gpudata=Holder(tensor))
         return array
+
+
+def gpuarray_to_tensor(gpuarray):
+    '''Convert a :class:`pycuda.gpuarray.GPUArray` to a :class:`torch.Tensor`. The underlying
+    storage will NOT be shared, since a new copy must be allocated.
+
+    Parameters
+    ----------
+    gpuarray  :   pycuda.gpuarray.GPUArray
+
+    Returns
+    -------
+    torch.Tensor
+    '''
+    shape = gpuarray.shape
+    dtype = gpuarray.dtype
+    out_dtype = numpy_dtype_to_torch(dtype)
+    out = torch.zeros(shape, dtype=out_dtype).cuda()
+    gpuarray_copy = tensor_to_gpuarray(out)
+    byte_size = gpuarray.itemsize * gpuarray.size
+    pycuda.driver.memcpy_dtod(gpuarray_copy.gpudata, gpuarray.gpudata, byte_size)
+    return out
