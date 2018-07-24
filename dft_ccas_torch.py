@@ -1,26 +1,32 @@
+from skcuda import fft
+import numpy as np
+import pycuda.autoinit
+import pycuda
 import torch
 import utils
 
 import pandas as pd
 from cca_core_torch import get_cca_similarity_torch
 
+complex_factor = pycuda.gpuarray.to_gpu(np.array(1j, dtype=np.complex64))
+
 
 def fft_resize_torch(images, resize=False, new_size=None):
     assert len(images.shape) == 4, ('expecting images to be'
-                                    ' [batch_size, height, width, num_channels]')
-
-    gpuarray = utils.tensor_to_gpuarray(images)
-    im_fft = torch.rfft(images, signal_ndim=2)
+                                    '[batch_size, height, width, num_channels]')
+    images = utils.tensor_to_gpuarray(images)
+    im_fft = utils.fft2(images, axes=[1, 2])
+    __import__('ipdb').set_trace()
 
     # resizing images
     if resize:
         # get fourier frequencies to threshold
-        assert (im_fft.shape[1] == im_fft.shape[2]), ('Need images to have same height and width')
+        assert (im_fft.shape[1] == im_fft.shape[2]), ('Need images to have same' 'height and width')
         # downsample by threshold
         width = im_fft.shape[2]
         new_width = new_size[0]
-        freqs = utils.fftfreq(width, d=1.0 / width)
-        idxs = utils.flatnonzero((freqs >= -new_width / 2.0) & (freqs < new_width / 2.0))
+        freqs = utils.fftfreq_pycuda(width, d=1.0 / width)
+        idxs = np.flatnonzero((freqs >= -new_width / 2.0) & (freqs < new_width / 2.0))
         im_fft_downsampled = im_fft[:, :, idxs, :][:, idxs, :, :]
 
     else:

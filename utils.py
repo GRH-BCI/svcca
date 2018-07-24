@@ -4,9 +4,24 @@
 '''
 import torch
 import numpy as np
+import reikna
+import reikna.cluda as cluda
+from reikna.fft import FFT
+from reikna.cluda import dtypes
+from reikna.core import Annotation, Type, Transformation, Parameter
 
 
-def fftfreq(n, d=1.0):
+import pycuda.autoinit
+from pycuda.gpuarray import GPUArray
+from pycuda.driver import PointerHolderBase
+import warnings
+from pycuda.compyte.dtypes import dtype_to_ctype
+
+
+API = cluda.cuda_api()
+
+
+def fftfreq_torch(n, d=1.0):
     if not np.issubdtype(type(n), np.integer) and type(n) not in [int, torch.uint8, torch.int8,
                                                                   torch.short, torch.int, torch.long]:
         raise ValueError(f'n should be an integer (is {type(n)})')
@@ -18,6 +33,21 @@ def fftfreq(n, d=1.0):
     p1 = torch.arange(0, N, dtype=torch.float32)
     results[:N] = p1
     p2 = torch.arange(-(n // 2), 0, dtype=torch.float32)
+    results[N:] = p2
+    return results * val
+
+
+def fftfreq_pycuda(n, d=1.0):
+    if not np.issubdtype(type(n), np.integer):
+        raise ValueError(f'n should be an integer (is {type(n)})')
+    n = int(n)
+    d = float(d)
+    val = 1.0 / (n * d)
+    results = pycuda.gpuarray.empty((n,), dtype=np.float32)
+    N = (n - 1) // 2 + 1
+    p1 = pycuda.gpuarray.arange(0, N, dtype=np.float32)
+    results[:N] = p1
+    p2 = pycuda.gpuarray.arange(-(n // 2), 0, dtype=np.float32)
     results[N:] = p2
     return results * val
 
@@ -43,7 +73,6 @@ def cov(m, y=None):
     fact = X.shape[1] - ddof
 
     if fact <= 0:
-        import warnings
         warnings.warn("Degrees of freedom <= 0 for slice",
                       RuntimeWarning, stacklevel=2)
         fact = 0.0
@@ -66,9 +95,6 @@ def dot(a, b, out=None):
         raise ValueError('Torch matmul with multidimensional matrices currently unsupported.')
     return torch.matmul(a, b, out=out)
 
-import pycuda.autoinit
-from pycuda.gpuarray import GPUArray
-from pycuda.driver import PointerHolderBase
 
 class Holder(PointerHolderBase):
 
@@ -80,10 +106,14 @@ class Holder(PointerHolderBase):
     def get_pointer(self):
         return self.tensor.data_ptr()
 
+    def __int__(self):
+        return self.__index__()
+
     # without an __index__ method, arithmetic calls to the GPUArray backed by this pointer fail
     # not sure why, this needs to return some integer, apparently
     def __index__(self):
         return self.gpudata
+
 
 # dict to map between torch and numpy dtypes
 dtype_map = {
@@ -126,7 +156,6 @@ def torch_dtype_to_numpy(dtype):
         If there is not PyTorch equivalent, or the equivalent would not work with pycuda
     '''
 
-    from pycuda.compyte.dtypes import dtype_to_ctype
     if dtype not in dtype_map:
         raise ValueError(f'{dtype} has no PyTorch equivalent')
     else:
@@ -178,9 +207,10 @@ def tensor_to_gpuarray(tensor):
     if not tensor.is_cuda:
         raise ValueError('Cannot convert CPU tensor to GPUArray (call `cuda()` on it)')
     else:
-        array = GPUArray(tensor.shape, dtype=torch_dtype_to_numpy(tensor.dtype),
-                         gpudata=Holder(tensor))
-        return array
+        thread = API.Thread.create()
+        return reikna.cluda.cuda.Array(thread, tensor.shape,
+                                    dtype=torch_dtype_to_numpy(tensor.dtype),
+                                    gpudata=Holder(tensor))
 
 
 def gpuarray_to_tensor(gpuarray):
@@ -203,3 +233,35 @@ def gpuarray_to_tensor(gpuarray):
     byte_size = gpuarray.itemsize * gpuarray.size
     pycuda.driver.memcpy_dtod(gpuarray_copy.gpudata, gpuarray.gpudata, byte_size)
     return out
+
+
+####################################################################################################
+#  Taken from https://github.com/fjarri/reikna/blob/develop/examples/demo_real_to_complex_fft.py   #
+####################################################################################################
+
+
+def get_complex_trf(arr):
+    complex_dtype = dtypes.complex_for(arr.dtype)
+    return Transformation(
+        [Parameter('output', Annotation(Type(complex_dtype, arr.shape), 'o')),
+         Parameter('input', Annotation(arr, 'i'))],
+         """
+         ${output.store_same}(
+             COMPLEX_CTR(${output.ctype})(
+                 ${input.load_same},
+                 0));
+         """)
+
+
+def fft2(array_gpu, axes=None):
+    thread = API.Thread.create()
+    complex_transf = get_complex_trf(array_gpu)
+
+    fft = FFT(complex_transf.output, axes=axes)
+    fft.parameter.input.connect(complex_transf, complex_transf.output,
+                                new_input=complex_transf.input)
+    cfft = fft.compile(thread)
+
+    result_gpu = thread.array(array_gpu.shape, np.complex64)
+    cfft(result_gpu, array_gpu)
+    return result_gpu
