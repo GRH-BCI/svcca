@@ -1,6 +1,5 @@
 from skcuda import fft
 import numpy as np
-import pycuda.autoinit
 import pycuda
 import torch
 import utils
@@ -15,8 +14,7 @@ def fft_resize_torch(images, resize=False, new_size=None):
     assert len(images.shape) == 4, ('expecting images to be'
                                     '[batch_size, height, width, num_channels]')
     images = utils.tensor_to_gpuarray(images)
-    im_fft = utils.fft2(images, axes=[1, 2])
-    __import__('ipdb').set_trace()
+    im_fft = utils.fft2(images, axes=[1, 2]).copy()
 
     # resizing images
     if resize:
@@ -25,9 +23,13 @@ def fft_resize_torch(images, resize=False, new_size=None):
         # downsample by threshold
         width = im_fft.shape[2]
         new_width = new_size[0]
-        freqs = utils.fftfreq_pycuda(width, d=1.0 / width)
+        freqs = np.fft.fftfreq(width, d=1.0 / width)
         idxs = np.flatnonzero((freqs >= -new_width / 2.0) & (freqs < new_width / 2.0))
-        im_fft_downsampled = im_fft[:, :, idxs, :][:, idxs, :, :]
+        im_fft_downsampled = pycuda.gpuarray.empty((im_fft.shape[0], len(idxs), len(idxs),
+                                                    im_fft.shape[3]), dtype=im_fft.dtype)
+        for n, idx in enumerate(idxs):
+            for n2, idx2 in enumerate(idxs):
+                im_fft_downsampled[:, n, n2, :] = im_fft[:, int(idx), int(idx2), :]
 
     else:
         im_fft_downsampled = im_fft

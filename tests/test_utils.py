@@ -6,6 +6,9 @@ import unittest
 import numpy as np
 import utils
 import torch
+import pycuda
+import pycuda.autoinit
+import pycuda.gpuarray
 
 
 class TestUtils(unittest.TestCase):
@@ -14,7 +17,7 @@ class TestUtils(unittest.TestCase):
         test_ints = sorted([10, 212312, 2, 23523, 1, 35456, 45, 654, 945, 2312313])
         for i in test_ints:
             res_np = np.fft.fftfreq(i)
-            res_torch = utils.fftfreq(i).numpy()
+            res_torch = utils.fftfreq_torch(i).numpy()
             self.assertTrue(np.allclose(res_np, res_torch), msg=f'Failure for {i}')
 
     def test_cov(self):
@@ -100,6 +103,12 @@ class TestUtils(unittest.TestCase):
         gpuarray = utils.tensor_to_gpuarray(tensor) * 2
         tensor2 = utils.gpuarray_to_tensor(gpuarray)
         self.assertTrue((tensor * 2 == tensor2).all())
+
+    def test_pycuda_mean(self):
+
+        array = pycuda.gpuarray.to_gpu(np.random.rand(5,5))
+        sum = utils.pycuda_mean(array, axis=1)
+        self.assertTrue(np.allclose(sum.get(), np.mean(array.get(), axis=1)))
 
 
 if __name__ == '__main__':

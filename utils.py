@@ -52,6 +52,55 @@ def fftfreq_pycuda(n, d=1.0):
     return results * val
 
 
+def cat_pycuda(a, b):
+
+    assert a.ndim == b.ndim == 2, 'Only 2d inputs supported for now.'
+    assert a.shape[1] == b.shape[1], '2nd dimension must have same size.'
+
+    rows_a = a.shape[0]
+    rows_b = b.shape[0]
+    cols = a.shape[1]
+    ret = pycuda.gpuarray.empty(rows_a, rows_b, cols)
+    ret[:rows_a, :] = a
+    ret[rows_b:, :] = b
+
+    return ret
+
+
+def cov_pycuda(m, y=None):
+
+    if m.ndim > 2:
+        raise ValueError("m has more than 2 dimensions")
+
+    if y.ndim > 2:
+        raise ValueError('y has more than 2 dimensions')
+
+    X = m
+    if X.shape[0] == 0:
+        return pycuda.gpuarray.empty([0], dtype=m.dtype)
+    if y is not None:
+        X = cat_pycuda(X, y)
+
+    ddof = 1
+
+    avg = pycuda_mean(X, axes=[1])
+
+    fact = X.shape[1] - ddof
+
+    if fact <= 0:
+        warnings.warn("Degrees of freedom <= 0 for slice",
+                      RuntimeWarning, stacklevel=2)
+        fact = 0.0
+
+    X -= avg[:, None]
+    X_T = X.T
+    c = dot(X, X_T)
+    c *= 1. / fact
+    return c.squeeze()
+
+
+
+
 def cov(m, y=None):
 
     if m.ndimension() > 2:
@@ -207,10 +256,10 @@ def tensor_to_gpuarray(tensor):
     if not tensor.is_cuda:
         raise ValueError('Cannot convert CPU tensor to GPUArray (call `cuda()` on it)')
     else:
-        thread = API.Thread.create()
+        thread = API.Thread(pycuda.autoinit.context)
         return reikna.cluda.cuda.Array(thread, tensor.shape,
                                     dtype=torch_dtype_to_numpy(tensor.dtype),
-                                    gpudata=Holder(tensor))
+                                    base_data=Holder(tensor))
 
 
 def gpuarray_to_tensor(gpuarray):
@@ -254,7 +303,7 @@ def get_complex_trf(arr):
 
 
 def fft2(array_gpu, axes=None):
-    thread = API.Thread.create()
+    thread = API.Thread(pycuda.autoinit.context)
     complex_transf = get_complex_trf(array_gpu)
 
     fft = FFT(complex_transf.output, axes=axes)
@@ -265,3 +314,14 @@ def fft2(array_gpu, axes=None):
     result_gpu = thread.array(array_gpu.shape, np.complex64)
     cfft(result_gpu, array_gpu)
     return result_gpu
+
+
+def pycuda_mean(array_gpu, axis=None):
+    # number of elements in the meaned dimensions
+    n = array_gpu.size if not axis else array_gpu.shape[axis]
+    thread = API.Thread(pycuda.autoinit.context)
+    reduction = reikna.algorithms.Reduce(array_gpu, reikna.algorithms.predicate_sum(array_gpu.dtype), axes=[axis])
+    creduction = reduction.compile(thread)
+    result = thread.empty_like(reduction.parameter.output)
+    creduction(result, array_gpu)
+    return result / n
