@@ -7,8 +7,10 @@ import numpy as np
 import utils
 import torch
 import pycuda
-import pycuda.autoinit
+pycuda.driver.init()
+device = pycuda.driver.Device(0)
 import pycuda.gpuarray
+np.random.seed(0)
 
 
 class TestUtils(unittest.TestCase):
@@ -20,7 +22,7 @@ class TestUtils(unittest.TestCase):
             res_torch = utils.fftfreq_torch(i).numpy()
             self.assertTrue(np.allclose(res_np, res_torch), msg=f'Failure for {i}')
 
-    def test_cov(self):
+    def test_cov_torch(self):
 
         array1 = np.random.rand(50, 10)
         array2 = np.random.rand(50, 10)
@@ -86,13 +88,15 @@ class TestUtils(unittest.TestCase):
         # res_torch = utils.dot(torch.tensor(array_n), torch.tensor(array_m)).numpy()
         # self.assertTrue(np.allclose(res_np, res_torch))
 
-    def test_pycuda(self):
+    def test_pycuda_conversion(self):
+        ctx = device.make_context()
+
         array = np.array([1, 2, 3, 4])
         for dtype in [torch.uint8, torch.int16, torch.short, torch.int, torch.int32, torch.int64,
                       torch.long, torch.float, torch.float32,
                       torch.float64, torch.double]:
             t = torch.tensor(array, dtype=dtype).cuda()
-            gpuarray = utils.tensor_to_gpuarray(t)
+            gpuarray = utils.tensor_to_gpuarray(t, context=ctx)
             self.assertTrue(all(t * 2 == torch.tensor((gpuarray * 2).get()).cuda()))
 
         for dtype in [torch.half, torch.float16]:
@@ -100,15 +104,29 @@ class TestUtils(unittest.TestCase):
             self.assertRaises(ValueError, lambda: utils.tensor_to_gpuarray(t))
 
         tensor = torch.rand((4, 5, 6)).cuda()
-        gpuarray = utils.tensor_to_gpuarray(tensor) * 2
-        tensor2 = utils.gpuarray_to_tensor(gpuarray)
+        gpuarray = utils.tensor_to_gpuarray(tensor, context=ctx) * 2
+        tensor2 = utils.gpuarray_to_tensor(gpuarray, context=ctx)
         self.assertTrue((tensor * 2 == tensor2).all())
+        ctx.pop()
 
     def test_pycuda_mean(self):
 
-        array = pycuda.gpuarray.to_gpu(np.random.rand(5,5))
-        sum = utils.pycuda_mean(array, axis=1)
+        ctx = device.make_context()
+        array = pycuda.gpuarray.to_gpu(np.random.rand(5, 5))
+        sum = utils.pycuda_mean(array, axis=1, context=ctx)
         self.assertTrue(np.allclose(sum.get(), np.mean(array.get(), axis=1)))
+        ctx.pop()
+
+    def test_cov_pycuda(self):
+
+        ctx = device.make_context()
+        array1 = np.random.rand(50, 10)
+        array2 = np.random.rand(50, 10)
+
+        res_np = np.cov(array1, array2)
+        res_pycuda = utils.cov_pycuda(pycuda.gpuarray.to_gpu(array1), pycuda.gpuarray.to_gpu(array2), context=ctx).get()
+        self.assertTrue(np.allclose(res_np, res_pycuda))
+        ctx.pop()
 
 
 if __name__ == '__main__':

@@ -5,20 +5,18 @@
 import torch
 import numpy as np
 import reikna
-import reikna.cluda as cluda
+import reikna.cluda as cuda
 from reikna.fft import FFT
 from reikna.cluda import dtypes
 from reikna.core import Annotation, Type, Transformation, Parameter
-
-
 import pycuda.autoinit
-from pycuda.gpuarray import GPUArray
 from pycuda.driver import PointerHolderBase
 import warnings
 from pycuda.compyte.dtypes import dtype_to_ctype
+from skcuda.misc import subtract, init as skcuinit
+from skcuda.linalg import dot as sdot
 
-
-API = cluda.cuda_api()
+skcuinit()
 
 
 def fftfreq_torch(n, d=1.0):
@@ -60,14 +58,14 @@ def cat_pycuda(a, b):
     rows_a = a.shape[0]
     rows_b = b.shape[0]
     cols = a.shape[1]
-    ret = pycuda.gpuarray.empty(rows_a, rows_b, cols)
+    ret = pycuda.gpuarray.empty((rows_a + rows_b, cols), dtype=a.dtype)
     ret[:rows_a, :] = a
     ret[rows_b:, :] = b
 
     return ret
 
 
-def cov_pycuda(m, y=None):
+def cov_pycuda(m, y=None, context=pycuda.autoinit.context):
 
     if m.ndim > 2:
         raise ValueError("m has more than 2 dimensions")
@@ -83,7 +81,7 @@ def cov_pycuda(m, y=None):
 
     ddof = 1
 
-    avg = pycuda_mean(X, axes=[1])
+    avg = pycuda_mean(X, axis=1, context=context)
 
     fact = X.shape[1] - ddof
 
@@ -92,13 +90,10 @@ def cov_pycuda(m, y=None):
                       RuntimeWarning, stacklevel=2)
         fact = 0.0
 
-    X -= avg[:, None]
-    X_T = X.T
-    c = dot(X, X_T)
+    X = subtract(X, avg[:, None])
+    c = sdot(X, X, transb='T')
     c *= 1. / fact
     return c.squeeze()
-
-
 
 
 def cov(m, y=None):
@@ -189,7 +184,8 @@ dtype_map = {
 
 
 def torch_dtype_to_numpy(dtype):
-    '''Convert a torch ``dtype`` to an equivalent numpy ``dtype``, if it is also available in pycuda.
+    '''Convert a torch ``dtype`` to an equivalent numpy ``dtype``, if it is also available in
+    pycuda.
 
     Parameters
     ----------
@@ -236,7 +232,7 @@ def numpy_dtype_to_torch(dtype):
             return dtype_t
 
 
-def tensor_to_gpuarray(tensor):
+def tensor_to_gpuarray(tensor, context=pycuda.autoinit.context):
     '''Convert a :class:`torch.Tensor` to a :class:`pycuda.gpuarray.GPUArray`. The underlying
     storage will be shared, so that modifications to the array will reflect in the tensor object.
 
@@ -256,13 +252,13 @@ def tensor_to_gpuarray(tensor):
     if not tensor.is_cuda:
         raise ValueError('Cannot convert CPU tensor to GPUArray (call `cuda()` on it)')
     else:
-        thread = API.Thread(pycuda.autoinit.context)
+        thread = cuda.cuda_api().Thread(context)
         return reikna.cluda.cuda.Array(thread, tensor.shape,
-                                    dtype=torch_dtype_to_numpy(tensor.dtype),
-                                    base_data=Holder(tensor))
+                                       dtype=torch_dtype_to_numpy(tensor.dtype),
+                                       base_data=Holder(tensor))
 
 
-def gpuarray_to_tensor(gpuarray):
+def gpuarray_to_tensor(gpuarray, context=pycuda.autoinit.context):
     '''Convert a :class:`pycuda.gpuarray.GPUArray` to a :class:`torch.Tensor`. The underlying
     storage will NOT be shared, since a new copy must be allocated.
 
@@ -278,7 +274,7 @@ def gpuarray_to_tensor(gpuarray):
     dtype = gpuarray.dtype
     out_dtype = numpy_dtype_to_torch(dtype)
     out = torch.zeros(shape, dtype=out_dtype).cuda()
-    gpuarray_copy = tensor_to_gpuarray(out)
+    gpuarray_copy = tensor_to_gpuarray(out, context=context)
     byte_size = gpuarray.itemsize * gpuarray.size
     pycuda.driver.memcpy_dtod(gpuarray_copy.gpudata, gpuarray.gpudata, byte_size)
     return out
@@ -302,9 +298,9 @@ def get_complex_trf(arr):
          """)
 
 
-def fft2(array_gpu, axes=None):
-    thread = API.Thread(pycuda.autoinit.context)
+def fft2(array_gpu, axes=None, context=pycuda.autoinit.context):
     complex_transf = get_complex_trf(array_gpu)
+    thread = cuda.cuda_api().Thread(context)
 
     fft = FFT(complex_transf.output, axes=axes)
     fft.parameter.input.connect(complex_transf, complex_transf.output,
@@ -316,11 +312,13 @@ def fft2(array_gpu, axes=None):
     return result_gpu
 
 
-def pycuda_mean(array_gpu, axis=None):
+def pycuda_mean(array_gpu, axis=None, context=pycuda.autoinit.context):
     # number of elements in the meaned dimensions
     n = array_gpu.size if not axis else array_gpu.shape[axis]
-    thread = API.Thread(pycuda.autoinit.context)
-    reduction = reikna.algorithms.Reduce(array_gpu, reikna.algorithms.predicate_sum(array_gpu.dtype), axes=[axis])
+    reduction = reikna.algorithms.Reduce(array_gpu,
+                                         reikna.algorithms.predicate_sum(array_gpu.dtype),
+                                         axes=[axis])
+    thread = cuda.cuda_api().Thread(context)
     creduction = reduction.compile(thread)
     result = thread.empty_like(reduction.parameter.output)
     creduction(result, array_gpu)
