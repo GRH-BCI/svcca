@@ -50,10 +50,27 @@ def fftfreq_pycuda(n, d=1.0):
     return results * val
 
 
+def copy2d(src):
+    new = pycuda.gpuarray.empty(src.shape, src.dtype)
+    copy = pycuda.driver.Memcpy2D()
+    copy.set_src_device(src.gpudata)
+    copy.set_dst_device(new.gpudata)
+    copy.src_pitch = src.shape[1] * src.itemsize
+    copy.dst_pitch = copy.width_in_bytes = copy.src_pitch
+    copy.height = src.shape[0]
+    copy(aligned=True)
+    return new
+
+
 def cat_pycuda(a, b):
 
     assert a.ndim == b.ndim == 2, 'Only 2d inputs supported for now.'
     assert a.shape[1] == b.shape[1], '2nd dimension must have same size.'
+
+    if not a.flags.c_contiguous:
+        a = copy2d(a)
+    if not b.flags.c_contiguous:
+        b = copy2d(b)
 
     rows_a = a.shape[0]
     rows_b = b.shape[0]

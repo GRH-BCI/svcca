@@ -5,21 +5,19 @@ import torch
 import utils
 
 import pandas as pd
-from cca_core_torch import get_cca_similarity_torch
-
-complex_factor = pycuda.gpuarray.to_gpu(np.array(1j, dtype=np.complex64))
+from cca_core_torch import get_cca_similarity_pycuda
 
 
-def fft_resize_torch(images, resize=False, new_size=None):
+def fft_resize_torch(images, resize=False, new_size=None, context=pycuda.autoinit.context):
     assert len(images.shape) == 4, ('expecting images to be'
                                     '[batch_size, height, width, num_channels]')
-    images = utils.tensor_to_gpuarray(images)
+    images = utils.tensor_to_gpuarray(images, context=context)
     im_fft = utils.fft2(images, axes=[1, 2]).copy()
 
     # resizing images
     if resize:
         # get fourier frequencies to threshold
-        assert (im_fft.shape[1] == im_fft.shape[2]), ('Need images to have same' 'height and width')
+        assert (im_fft.shape[1] == im_fft.shape[2]), ('Need images to have same height and width')
         # downsample by threshold
         width = im_fft.shape[2]
         new_width = new_size[0]
@@ -37,8 +35,9 @@ def fft_resize_torch(images, resize=False, new_size=None):
     return im_fft_downsampled
 
 
-def fourier_ccas_torch(conv_acts1, conv_acts2, return_coefs=False,
-                       compute_dirns=False, verbose=False):
+
+def fourier_ccas_pycuda(conv_acts1, conv_acts2, return_coefs=False, compute_dirns=False,
+                       verbose=False, context=pycuda.autoinit.context):
     height1, width1 = conv_acts1.shape[1], conv_acts1.shape[2]
     height2, width2 = conv_acts2.shape[1], conv_acts2.shape[2]
     if height1 != height2 or width1 != width2:
@@ -53,18 +52,19 @@ def fourier_ccas_torch(conv_acts1, conv_acts2, return_coefs=False,
         resize   = False
 
     # resize and preprocess with fft
-    fft_acts1 = fft_resize_torch(conv_acts1, resize=resize, new_size=new_size)
-    fft_acts2 = fft_resize_torch(conv_acts2, resize=resize, new_size=new_size)
+    fft_acts1 = fft_resize_torch(conv_acts1, resize=resize, new_size=new_size, context=context)
+    fft_acts2 = fft_resize_torch(conv_acts2, resize=resize, new_size=new_size, context=context)
 
     # loop over spatial dimensions and get cca coefficients
     all_results = pd.DataFrame()
     for i in range(height):
         for j in range(width):
-            results_dict = get_cca_similarity_torch(
-                fft_acts1[:, i, j, :].transpose(0, 1),
-                fft_acts2[:, i, j, :].transpose(0, 1),
+            results_dict = get_cca_similarity_pycuda(
+                fft_acts1[:, i, j, :].T,
+                fft_acts2[:, i, j, :].T,
                 compute_dirns=compute_dirns,
-                verbose=verbose
+                verbose=verbose,
+                context=context
             )
 
             # apply inverse FFT to get coefficients and directions if specified
