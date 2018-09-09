@@ -1,4 +1,4 @@
-import cupy as np
+import cupy, numpy
 
 num_cca_trials = 5
 epsilon = 1e-6
@@ -14,6 +14,11 @@ def positivedef_matrix_sqrt(array):
     Returns:
               sqrtarray: The matrix square root of array
     '''
+    if isinstance(array, numpy.ndarray):
+        np = numpy
+    else:
+        np = cupy
+
     w, v = np.linalg.eigh(array)
     #  A - np.dot(v, np.dot(np.diag(w), v.T))
     wsqrt = np.sqrt(w)
@@ -41,6 +46,11 @@ def remove_small(sigma_xx, sigma_xy, sigma_yx, sigma_yy, threshold=1e-6):
               x_idxs: indexes of sigma_xx that were removed
               y_idxs: indexes of sigma_yy that were removed
     '''
+    if isinstance(sigma_xx, numpy.ndarray):
+        np = numpy
+    else:
+        np = cupy
+
 
     x_diag = np.abs(np.diagonal(sigma_xx))
     y_diag = np.abs(np.diagonal(sigma_yy))
@@ -90,6 +100,11 @@ def compute_ccas(sigma_xx, sigma_xy, sigma_yx, sigma_yy, verbose=True):
                             by remove_small
               y_idxs:       Same as above but for sigma_yy
     '''
+    if isinstance(sigma_xx, numpy.ndarray):
+        np = numpy
+    else:
+        np = cupy
+
     (sigma_xx, sigma_xy, sigma_yx, sigma_yy, x_idxs, y_idxs) = remove_small(
         sigma_xx, sigma_xy, sigma_yx, sigma_yy)
 
@@ -125,6 +140,7 @@ def compute_ccas(sigma_xx, sigma_xy, sigma_yx, sigma_yy, verbose=True):
         print('trying to take final svd')
     arr_x_stable = arr_x + epsilon * np.eye(arr_x.shape[0])
     arr_y_stable = arr_y + epsilon * np.eye(arr_y.shape[0])
+    import ipdb; ipdb.set_trace()  # XXX BREAKPOINT
     ux, sx, vx = np.linalg.svd(arr_x_stable)
     uy, sy, vy = np.linalg.svd(arr_y_stable)
 
@@ -150,6 +166,11 @@ def sum_threshold(array, threshold):
     Returns:
               i: index at which np.sum(array[:i]) >= threshold
     '''
+    if isinstance(array, numpy.ndarray):
+        np = numpy
+    else:
+        np = cupy
+
     assert (threshold >= 0) and (threshold <= 1), 'print incorrect threshold'
 
     for i in range(len(array)):
@@ -157,7 +178,7 @@ def sum_threshold(array, threshold):
             return i
 
 
-def create_zero_dict(compute_dirns, dimension):
+def create_zero_dict(compute_dirns, dimension, numpy=True):
     '''Outputs a zero dict when neuron activation norms too small.
 
     This function creates a return_dict with appropriately shaped zero entries
@@ -170,6 +191,11 @@ def create_zero_dict(compute_dirns, dimension):
     Returns:
               return_dict: a dict of appropriately shaped zero entries
     '''
+    if numpy:
+        np = numpy
+    else:
+        np = cupy
+
     return_dict = {}
     return_dict['mean'] = (np.asarray(0), np.asarray(0))
     return_dict['sum'] = (np.asarray(0), np.asarray(0))
@@ -223,6 +249,13 @@ def get_cca_similarity(acts1, acts2, threshold=0.98, compute_dirns=True,
                     compute_dirns=True, the cca directions are also
                     computed.
     '''
+    if isinstance(acts1, numpy.ndarray):
+        np = numpy
+        use_numpy = True
+    else:
+        np = cupy
+        use_numpy = False
+
 
     # assert dimensionality equal
     assert acts1.shape[1] == acts2.shape[1], 'dimensions don\'t match'
@@ -254,7 +287,7 @@ def get_cca_similarity(acts1, acts2, threshold=0.98, compute_dirns=True,
 
     # if x_idxs or y_idxs is all false, return_dict has zero entries
     if (not np.any(x_idxs)) or (not np.any(y_idxs)):
-        return create_zero_dict(compute_dirns, acts1.shape[1])
+        return create_zero_dict(compute_dirns, acts1.shape[1], numpy=use_numpy)
 
     if compute_dirns:
         # orthonormal directions that are CCA directions
@@ -317,6 +350,11 @@ def robust_cca_similarity(acts1, acts2, threshold=0.98, compute_dirns=True):
                            compute_dirns=True, the cca directions are also
                            computed.
     '''
+    if isinstance(acts1, numpy.ndarray):
+        np = numpy
+    else:
+        np = cupy
+
 
     for trial in range(num_cca_trials):
         try:

@@ -1,4 +1,4 @@
-import cupy as np
+import cupy, numpy
 import pandas as pd
 import svcca.cca_core_cupy as cca_core
 
@@ -20,6 +20,11 @@ def fft_resize(images, resize=False, new_size=None):
         im_fft_downsampled: a numpy array with shape
                             [batch_size, (new) height, (new) width, num_channels]
     '''
+    if isinstance(images, numpy.ndarray):
+        np = numpy
+    else:
+        np = cupy
+
     assert len(images.shape) == 4, ('expecting images to be'
                                     '[batch_size, height, width, num_channels]')
 
@@ -70,6 +75,11 @@ def fourier_ccas(conv_acts1, conv_acts2, return_coefs=False,
                      statistics. If compute_dirns=True, the cca directions
                      are also computed.
     '''
+    if isinstance(conv_acts1, numpy.ndarray):
+        np = numpy
+    else:
+        np = cupy
+
     height1, width1 = conv_acts1.shape[1], conv_acts1.shape[2]
     height2, width2 = conv_acts2.shape[1], conv_acts2.shape[2]
     if height1 != height2 or width1 != width2:
