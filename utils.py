@@ -89,4 +89,4 @@ def tensor_to_cupy(t):
     -------
     cupy.ndarray
     '''
-    return cupy.fromDlpack(torch.utils.dlpack.to_dlpack(t))
+    meturn cupy.fromDlpack(torch.utils.dlpack.to_dlpack(t))

@@ -1,39 +1,4 @@
-# Changes made by Rasmus Diederichsen <rasmus@peltarion.com>
-
-# Copyright 2016 Google Inc.
-#
-# Licensed under the Apache License, Version 2.0 (the 'License');
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an 'AS IS' BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-
-'''
-The core code for applying Canonical Correlation Analysis to deep networks.
-
-This module contains the core functions to apply canonical correlation analysis
-to deep neural networks. The main function is get_cca_similarity, which takes in
-two sets of activations, typically the neurons in two layers and their outputs
-on all of the datapoints D = [d_1,...,d_m] that have been passed through.
-
-Inputs have shape (num_neurons1, m), (num_neurons2, m). This can be directly
-applied used on fully connected networks. For convolutional layers, the 3d block
-of neurons can either be flattened entirely, along channels, or alternatively,
-the dft_ccas (Discrete Fourier Transform) module can be used.
-
-See https://arxiv.org/abs/1706.05806 for full details.
-
-'''
-
-
-import numpy as np
+import cupy, numpy
 
 num_cca_trials = 5
 epsilon = 1e-6
@@ -49,6 +14,11 @@ def positivedef_matrix_sqrt(array):
     Returns:
               sqrtarray: The matrix square root of array
     '''
+    if isinstance(array, numpy.ndarray):
+        np = numpy
+    else:
+        np = cupy
+
     w, v = np.linalg.eigh(array)
     #  A - np.dot(v, np.dot(np.diag(w), v.T))
     wsqrt = np.sqrt(w)
@@ -76,6 +46,11 @@ def remove_small(sigma_xx, sigma_xy, sigma_yx, sigma_yy, threshold=1e-6):
               x_idxs: indexes of sigma_xx that were removed
               y_idxs: indexes of sigma_yy that were removed
     '''
+    if isinstance(sigma_xx, numpy.ndarray):
+        np = numpy
+    else:
+        np = cupy
+
 
     x_diag = np.abs(np.diagonal(sigma_xx))
     y_diag = np.abs(np.diagonal(sigma_yy))
@@ -125,6 +100,11 @@ def compute_ccas(sigma_xx, sigma_xy, sigma_yx, sigma_yy, verbose=True):
                             by remove_small
               y_idxs:       Same as above but for sigma_yy
     '''
+    if isinstance(sigma_xx, numpy.ndarray):
+        np = numpy
+    else:
+        np = cupy
+
     (sigma_xx, sigma_xy, sigma_yx, sigma_yy, x_idxs, y_idxs) = remove_small(
         sigma_xx, sigma_xy, sigma_yx, sigma_yy)
 
@@ -185,6 +165,11 @@ def sum_threshold(array, threshold):
     Returns:
               i: index at which np.sum(array[:i]) >= threshold
     '''
+    if isinstance(array, numpy.ndarray):
+        np = numpy
+    else:
+        np = cupy
+
     assert (threshold >= 0) and (threshold <= 1), 'print incorrect threshold'
 
     for i in range(len(array)):
@@ -192,7 +177,7 @@ def sum_threshold(array, threshold):
             return i
 
 
-def create_zero_dict(compute_dirns, dimension):
+def create_zero_dict(compute_dirns, dimension, numpy=True):
     '''Outputs a zero dict when neuron activation norms too small.
 
     This function creates a return_dict with appropriately shaped zero entries
@@ -205,6 +190,11 @@ def create_zero_dict(compute_dirns, dimension):
     Returns:
               return_dict: a dict of appropriately shaped zero entries
     '''
+    if numpy:
+        np = numpy
+    else:
+        np = cupy
+
     return_dict = {}
     return_dict['mean'] = (np.asarray(0), np.asarray(0))
     return_dict['sum'] = (np.asarray(0), np.asarray(0))
@@ -258,6 +248,13 @@ def get_cca_similarity(acts1, acts2, threshold=0.98, compute_dirns=True,
                     compute_dirns=True, the cca directions are also
                     computed.
     '''
+    if isinstance(acts1, numpy.ndarray):
+        np = numpy
+        use_numpy = True
+    else:
+        np = cupy
+        use_numpy = False
+
 
     # assert dimensionality equal
     assert acts1.shape[1] == acts2.shape[1], 'dimensions don\'t match'
@@ -289,7 +286,7 @@ def get_cca_similarity(acts1, acts2, threshold=0.98, compute_dirns=True,
 
     # if x_idxs or y_idxs is all false, return_dict has zero entries
     if (not np.any(x_idxs)) or (not np.any(y_idxs)):
-        return create_zero_dict(compute_dirns, acts1.shape[1])
+        return create_zero_dict(compute_dirns, acts1.shape[1], numpy=use_numpy)
 
     if compute_dirns:
         # orthonormal directions that are CCA directions
@@ -352,6 +349,11 @@ def robust_cca_similarity(acts1, acts2, threshold=0.98, compute_dirns=True):
                            compute_dirns=True, the cca directions are also
                            computed.
     '''
+    if isinstance(acts1, numpy.ndarray):
+        np = numpy
+    else:
+        np = cupy
+
 
     for trial in range(num_cca_trials):
         try:

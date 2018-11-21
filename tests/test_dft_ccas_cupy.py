@@ -6,7 +6,7 @@ import unittest
 import numpy as np
 import cupy
 from os.path import join, dirname
-from dft_ccas_cupy import fft_resize, fourier_ccas
+from dft_ccas import fft_resize, fourier_ccas
 
 class TestCCA(unittest.TestCase):
 

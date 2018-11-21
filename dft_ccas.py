@@ -1,52 +1,6 @@
-# Changes made by Rasmus Diederichsen <rasmus@peltarion.com>
-
-# Copyright 2016 Google Inc.
-#
-# Licensed under the Apache License, Version 2.0 (the 'License');
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an 'AS IS' BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-
-'''
-Code for use with large conv layers using DFT (discrete fourier transform).
-
-The functions in this script provide a scalable method for computing the cca
-similarity between large convolutional layers. The main function, fourier_ccas,
-takes in two sets of convolutional activations, of shapes [dataset_size,
-height1, width1, num_channels1, [dataset_size, height2, width2, num_channels2]
-and computes the cca similarity between them. The results are exact
-when the dataset over which correlations are computed is translation invariant.
-
-However, due to the strided nature of convolutional and pooling layers, image
-datasets are close to translation invariant, and very good results can still
-be achieved without taking correlations over a translation invariant dataset.
-
-See https://arxiv.org/abs/1706.05806 for details.
-
-This function can also be used to compute cca similarity between conv
-layers and fully connected layers (or neurons). We may want to compare
-similarity between convolutional feature maps at a layer and a particular class.
-Again assuming
-translation invariance of the original dataset, the fourier_ccas function can
-be used for this (reshaping the vector to be (dataset_size, 1, 1, 1)), and will
-output the correlation of the vector with the dc component of the DFT.
-This can be seen as a lower bound on the correlation of the vector with the
-channels.
-
-'''
-
-
-import numpy as np
+import cupy, numpy
 import pandas as pd
-import svcca.cca_core as cca_core
+import svcca.cca_core_cupy as cca_core
 
 
 def fft_resize(images, resize=False, new_size=None):
@@ -66,6 +20,11 @@ def fft_resize(images, resize=False, new_size=None):
         im_fft_downsampled: a numpy array with shape
                             [batch_size, (new) height, (new) width, num_channels]
     '''
+    if isinstance(images, numpy.ndarray):
+        np = numpy
+    else:
+        np = cupy
+
     assert len(images.shape) == 4, ('expecting images to be'
                                     '[batch_size, height, width, num_channels]')
 
@@ -116,6 +75,11 @@ def fourier_ccas(conv_acts1, conv_acts2, return_coefs=False,
                      statistics. If compute_dirns=True, the cca directions
                      are also computed.
     '''
+    if isinstance(conv_acts1, numpy.ndarray):
+        np = numpy
+    else:
+        np = cupy
+
     height1, width1 = conv_acts1.shape[1], conv_acts1.shape[2]
     height2, width2 = conv_acts2.shape[1], conv_acts2.shape[2]
     if height1 != height2 or width1 != width2:
