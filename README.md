@@ -1,7 +1,7 @@
 # About this fork
 
 This is a Python 3 port of the original SVCCA code onto the GPU. This is
-realized with the help of [Cupy](https://github.com/cupy/cupy/)]. Conversion
+realized with the help of [Cupy](https://github.com/cupy/cupy/). Conversion
 functions for [PyTorch](https://github.com/pytorch/pytorch) tensors are
 provided.
 
