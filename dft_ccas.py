@@ -1,6 +1,6 @@
 import cupy, numpy
 import pandas as pd
-import svcca.cca_core_cupy as cca_core
+import svcca.cca_core as cca_core
 
 
 def fft_resize(images, resize=False, new_size=None):
