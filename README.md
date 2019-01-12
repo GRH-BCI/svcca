@@ -11,7 +11,6 @@ increasing matrix size.
 
 Original README below.
 ---
-=======
 Disclaimer: This is not an official Google product.
 
 Copyright 2018 Google Inc.
@@ -69,7 +68,6 @@ While most of the results so far have focused on comparing two layers with CCA, 
     <img src="examples/Imagenet_class_similarity.png" width=700px>
 </p>
 
-=======
 ### References
 
 If you use this code, please consider citing either or both of the following papers:
