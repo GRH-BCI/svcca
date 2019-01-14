@@ -79,9 +79,10 @@ class Linalg(object):
     @staticmethod
     def cupy_place(arr, mask, vals):
         n = mask.sum()
+        vals = vals.flatten()
         if len(vals) < n:
             reps = cupy.ceil(n / len(vals))
-            vals = cupy.repeat(vals, reps, axis=0)
+            vals = cupy.repeat(vals, int(reps), axis=0)
             arr[mask] = vals[:n]
 
 
