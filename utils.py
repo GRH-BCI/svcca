@@ -67,7 +67,7 @@ def numpy_dtype_to_torch(dtype):
     are synonyms.
 
     Parameters
-    ----------
+    ---------
     dtype   :   torch.dtype
 
     Returns
@@ -90,11 +90,3 @@ def tensor_to_cupy(t):
     cupy.ndarray
     '''
     return cupy.fromDlpack(torch.utils.dlpack.to_dlpack(t))
-
-
-def cupy_place(arr, mask, vals):
-    n = mask.sum()
-    if len(vals) < n:
-        reps = cupy.ceil(n / len(vals))
-        vals = cupy.repeat(vals, reps, axis=0)
-    arr[mask] = vals[:n]
