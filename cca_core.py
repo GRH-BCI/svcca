@@ -36,9 +36,9 @@ for full details.
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-import cupy, numpy
+import numpy, cupy, torch
+import linalg
 
-num_cca_trials = 5
 
 def positivedef_matrix_sqrt(array):
     '''Stable method for computing matrix square roots, supports complex matrices.
@@ -50,15 +50,10 @@ def positivedef_matrix_sqrt(array):
     Returns:
               sqrtarray: The matrix square root of array
     '''
-    if isinstance(array, numpy.ndarray):
-        np = numpy
-    else:
-        np = cupy
-
-    w, v = np.linalg.eigh(array)
-    #  A - np.dot(v, np.dot(np.diag(w), v.T))
-    wsqrt = np.sqrt(w)
-    sqrtarray = np.dot(v, np.dot(np.diag(wsqrt), np.conj(v).T))
+    w, v = linalg.eigh(array)
+    # #  A - linalg.dot(v, linalg.dot(linalg.diag(w), v.T))
+    wsqrt = linalg.sqrt(w)
+    sqrtarray = linalg.dot(v, linalg.dot(linalg.diag(wsqrt), linalg.conj(v).T))
     return sqrtarray
 
 
@@ -87,8 +82,8 @@ def remove_small(sigma_xx, sigma_xy, sigma_yx, sigma_yy, epsilon):
     np = numpy
   else:
     np = cupy
-  x_diag = np.abs(np.diagonal(sigma_xx))
-  y_diag = np.abs(np.diagonal(sigma_yy))
+  x_diag = linalg.abs(linalg.diagonal(sigma_xx))
+  y_diag = linalg.abs(linalg.diagonal(sigma_yy))
   x_idxs = (x_diag >= epsilon)
   y_idxs = (y_diag >= epsilon)
 
@@ -138,10 +133,6 @@ def compute_ccas(sigma_xx, sigma_xy, sigma_yx, sigma_yy, epsilon,
             y_idxs:       Same as above but for sigma_yy
   """
 
-  if isinstance(sigma_xx, numpy.ndarray):
-    np = numpy
-  else:
-    np = cupy
   (sigma_xx, sigma_xy, sigma_yx, sigma_yy,
    x_idxs, y_idxs) = remove_small(sigma_xx, sigma_xy, sigma_yx, sigma_yy, epsilon)
 
@@ -149,15 +140,15 @@ def compute_ccas(sigma_xx, sigma_xy, sigma_yx, sigma_yy, epsilon,
   numy = sigma_yy.shape[0]
 
   if numx == 0 or numy == 0:
-    return ([0, 0, 0], [0, 0, 0], np.zeros_like(sigma_xx),
-            np.zeros_like(sigma_yy), x_idxs, y_idxs)
+    return ([0, 0, 0], [0, 0, 0], linalg.zeros_like(sigma_xx),
+            linalg.zeros_like(sigma_yy), x_idxs, y_idxs)
 
   if verbose:
     print("adding eps to diagonal and taking inverse")
-  sigma_xx += epsilon * np.eye(numx)
-  sigma_yy += epsilon * np.eye(numy)
-  inv_xx = np.linalg.pinv(sigma_xx)
-  inv_yy = np.linalg.pinv(sigma_yy)
+  sigma_xx += epsilon * linalg.eye(numx)
+  sigma_yy += epsilon * linalg.eye(numy)
+  inv_xx = linalg.pinv(sigma_xx)
+  inv_yy = linalg.pinv(sigma_yy)
 
   if verbose:
     print("taking square root")
@@ -166,16 +157,16 @@ def compute_ccas(sigma_xx, sigma_xy, sigma_yx, sigma_yy, epsilon,
 
   if verbose:
     print("dot products...")
-  arr = np.dot(invsqrt_xx, np.dot(sigma_xy, invsqrt_yy))
+  arr = linalg.dot(invsqrt_xx, linalg.dot(sigma_xy, invsqrt_yy))
 
   if verbose:
     print("trying to take final svd")
-  u, s, v = np.linalg.svd(arr)
+  u, s, v = linalg.svd(arr)
 
   if verbose:
     print("computed everything!")
 
-  return [u, np.abs(s), v], invsqrt_xx, invsqrt_yy, x_idxs, y_idxs
+  return [u, linalg.abs(s), v], invsqrt_xx, invsqrt_yy, x_idxs, y_idxs
 
 
 def sum_threshold(array, threshold):
@@ -190,51 +181,13 @@ def sum_threshold(array, threshold):
             threshold: a number between 0 and 1
 
   Returns:
-            i: index at which np.sum(array[:i]) >= threshold
+            i: index at which linalg.sum(array[:i]) >= threshold
   '''
-  if isinstance(array, numpy.ndarray):
-      np = numpy
-  else:
-      np = cupy
-
   assert (threshold >= 0) and (threshold <= 1), 'print incorrect threshold'
 
   for i in range(len(array)):
-    if np.sum(array[:i])/np.sum(array) >= threshold:
+    if linalg.sum(array[:i])/linalg.sum(array) >= threshold:
       return i
-
-def create_zero_dict(compute_dirns, dimension, numpy=True):
-    '''Outputs a zero dict when neuron activation norms too small.
-
-    This function creates a return_dict with appropriately shaped zero entries
-    when all neuron activations are very small.
-
-    Args:
-              compute_dirns: boolean, whether to have zero vectors for directions
-              dimension: int, defines shape of directions
-
-    Returns:
-              return_dict: a dict of appropriately shaped zero entries
-    '''
-    if numpy:
-        np = numpy
-    else:
-        np = cupy
-
-    return_dict = {}
-    return_dict['mean'] = (np.asarray(0), np.asarray(0))
-    return_dict['sum'] = (np.asarray(0), np.asarray(0))
-    return_dict['cca_coef1'] = np.asarray(0)
-    return_dict['cca_coef2'] = np.asarray(0)
-    return_dict['idx1'] = 0
-    return_dict['idx2'] = 0
-
-    if compute_dirns:
-        return_dict['cca_dirns1'] = np.zeros((1, dimension))
-        return_dict['cca_dirns2'] = np.zeros((1, dimension))
-
-    return return_dict
-
 
 def get_cca_similarity(acts1, acts2, epsilon=0., threshold=0.98,
                        compute_coefs=True,
@@ -299,64 +252,60 @@ def get_cca_similarity(acts1, acts2, epsilon=0., threshold=0.98,
   numx = acts1.shape[0]
   numy = acts2.shape[0]
 
-  covariance = np.cov(acts1, acts2)
+  covariance = linalg.cov(acts1, acts2)
   sigmaxx = covariance[:numx, :numx]
   sigmaxy = covariance[:numx, numx:]
   sigmayx = covariance[numx:, :numx]
   sigmayy = covariance[numx:, numx:]
 
   # rescale covariance to make cca computation more stable
-  xmax = np.max(np.abs(sigmaxx))
-  ymax = np.max(np.abs(sigmayy))
+  xmax = linalg.max(linalg.abs(sigmaxx))
+  ymax = linalg.max(linalg.abs(sigmayy))
   sigmaxx /= xmax
   sigmayy /= ymax
-  sigmaxy /= np.sqrt(xmax * ymax)
-  sigmayx /= np.sqrt(xmax * ymax)
+  sigmaxy /= linalg.sqrt(xmax * ymax)
+  sigmayx /= linalg.sqrt(xmax * ymax)
 
   ([u, s, v], invsqrt_xx, invsqrt_yy,
    x_idxs, y_idxs) = compute_ccas(sigmaxx, sigmaxy, sigmayx, sigmayy,
                                   epsilon=epsilon,
                                   verbose=verbose)
 
-  # if x_idxs or y_idxs is all false, return_dict has zero entries
-  if (not np.any(x_idxs)) or (not np.any(y_idxs)):
-    return create_zero_dict(compute_dirns, acts1.shape[1], numpy=np == numpy)
-
   if compute_coefs:
     # also compute full coefficients over all neurons
-    x_mask = np.dot(x_idxs.reshape((-1, 1)), x_idxs.reshape((1, -1)))
-    y_mask = np.dot(y_idxs.reshape((-1, 1)), y_idxs.reshape((1, -1)))
+    x_mask = linalg.dot(x_idxs.reshape((-1, 1)), x_idxs.reshape((1, -1)))
+    y_mask = linalg.dot(y_idxs.reshape((-1, 1)), y_idxs.reshape((1, -1)))
 
     return_dict["coef_x"] = u.T
     return_dict["invsqrt_xx"] = invsqrt_xx
-    return_dict["full_coef_x"] = np.zeros((numx, numx))
-    np.place(return_dict["full_coef_x"], x_mask,
+    return_dict["full_coef_x"] = linalg.zeros((numx, numx))
+    linalg.place(return_dict["full_coef_x"], x_mask,
              return_dict["coef_x"])
-    return_dict["full_invsqrt_xx"] = np.zeros((numx, numx))
-    np.place(return_dict["full_invsqrt_xx"], x_mask,
+    return_dict["full_invsqrt_xx"] = linalg.zeros((numx, numx))
+    linalg.place(return_dict["full_invsqrt_xx"], x_mask,
              return_dict["invsqrt_xx"])
 
     return_dict["coef_y"] = v
     return_dict["invsqrt_yy"] = invsqrt_yy
-    return_dict["full_coef_y"] = np.zeros((numy, numy))
-    np.place(return_dict["full_coef_y"], y_mask,
+    return_dict["full_coef_y"] = linalg.zeros((numy, numy))
+    linalg.place(return_dict["full_coef_y"], y_mask,
              return_dict["coef_y"])
-    return_dict["full_invsqrt_yy"] = np.zeros((numy, numy))
-    np.place(return_dict["full_invsqrt_yy"], y_mask,
+    return_dict["full_invsqrt_yy"] = linalg.zeros((numy, numy))
+    linalg.place(return_dict["full_invsqrt_yy"], y_mask,
              return_dict["invsqrt_yy"])
 
     # compute means
-    neuron_means1 = np.mean(acts1, axis=0, keepdims=True)
-    neuron_means2 = np.mean(acts2, axis=0, keepdims=True)
+    neuron_means1 = linalg.mean(acts1, axis=0, keepdims=True)
+    neuron_means2 = linalg.mean(acts2, axis=0, keepdims=True)
     return_dict["neuron_means1"] = neuron_means1
     return_dict["neuron_means2"] = neuron_means2
 
   if compute_dirns:
     # orthonormal directions that are CCA directions
-    cca_dirns1 = np.dot(np.dot(return_dict["full_coef_x"],
+    cca_dirns1 = linalg.dot(linalg.dot(return_dict["full_coef_x"],
                                return_dict["full_invsqrt_xx"]),
                         (acts1 - neuron_means1)) + neuron_means1
-    cca_dirns2 = np.dot(np.dot(return_dict["full_coef_y"],
+    cca_dirns2 = linalg.dot(linalg.dot(return_dict["full_coef_y"],
                                return_dict["full_invsqrt_yy"]),
                         (acts2 - neuron_means2)) + neuron_means2
 
@@ -369,62 +318,11 @@ def get_cca_similarity(acts1, acts2, epsilon=0., threshold=0.98,
   return_dict["x_idxs"] = x_idxs
   return_dict["y_idxs"] = y_idxs
   # summary statistics
-  return_dict["mean"] = (np.mean(s[:idx1]), np.mean(s[:idx2]))
-  return_dict["sum"] = (np.sum(s), np.sum(s))
+  return_dict["mean"] = (linalg.mean(s[:idx1]), linalg.mean(s[:idx2]))
+  return_dict["sum"] = (linalg.sum(s), linalg.sum(s))
 
   if compute_dirns:
     return_dict["cca_dirns1"] = cca_dirns1
     return_dict["cca_dirns2"] = cca_dirns2
-
-  return return_dict
-
-
-def robust_cca_similarity(acts1, acts2, threshold=0.98, epsilon=1e-6,
-                          compute_dirns=True):
-  """Calls get_cca_similarity multiple times while adding noise.
-
-  This function is very similar to get_cca_similarity, and can be used if
-  get_cca_similarity doesn't converge for some pair of inputs. This function
-  adds some noise to the activations to help convergence.
-
-  Args:
-            acts1: (num_neurons1, data_points) a 2d numpy array of neurons by
-                   datapoints where entry (i,j) is the output of neuron i on
-                   datapoint j.
-            acts2: (num_neurons2, data_points) same as above, but (potentially)
-                   for a different set of neurons. Note that acts1 and acts2
-                   can have different numbers of neurons, but must agree on the
-                   number of datapoints
-
-            threshold: float between 0, 1 used to get rid of trailing zeros in
-                       the cca correlation coefficients to output more accurate
-                       summary statistics of correlations.
-
-            epsilon: small float to help stabilize computations
-
-            compute_dirns: boolean value determining whether actual cca
-                           directions are computed. (For very large neurons and
-                           datasets, may be better to compute these on the fly
-                           instead of store in memory.)
-
-  Returns:
-            return_dict: A dictionary with outputs from the cca computations.
-                         Contains neuron coefficients (combinations of neurons
-                         that correspond to cca directions), the cca correlation
-                         coefficients (how well aligned directions correlate),
-                         x and y idxs (for computing cca directions on the fly
-                         if compute_dirns=False), and summary statistics. If
-                         compute_dirns=True, the cca directions are also
-                         computed.
-  """
-
-  for trial in range(num_cca_trials):
-    try:
-      return_dict = get_cca_similarity(acts1, acts2, threshold, compute_dirns)
-    except np.LinAlgError:
-      acts1 = acts1*1e-1 + np.random.normal(size=acts1.shape)*epsilon
-      acts2 = acts2*1e-1 + np.random.normal(size=acts1.shape)*epsilon
-      if trial + 1 == num_cca_trials:
-        raise
 
   return return_dict
