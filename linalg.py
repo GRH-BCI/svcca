@@ -25,6 +25,8 @@ class Linalg(object):
             'asarray': Linalg.asarray,
             'pinv': Linalg.pinv,
             'conj': Linalg.conj,
+            'transpose': Linalg.transpose,
+            'mean': Linalg.mean,
         }
 
     @staticmethod
@@ -37,11 +39,32 @@ class Linalg(object):
             return torch.Tensor(arg)
 
     @staticmethod
+    def transpose(arg):
+        if isinstance(arg, numpy.ndarray) or isinstance(arg, cupy.ndarray):
+            return arg.T
+        else:
+            return arg.t()
+
+    @staticmethod
     def conj(arr):
         if isinstance(arr, torch.Tensor):
             return arr
         else:
             return arr.conj()
+
+    @staticmethod
+    def mean(*args, **kwargs):
+        axis = kwargs.get('axis', None)
+        keepdims = kwargs.get('keepdims', False)
+        if isinstance(args[0], numpy.ndarray):
+            return numpy.mean(*args, axis=axis, keepdims=keepdims)
+        elif isinstance(args[0], cupy.ndarray):
+            return cupy.mean(*args, axis=axis, keepdims=keepdims)
+        else:
+            if axis is None:
+                return torch.mean(*args)
+            else:
+                return torch.mean(*args, axis, keepdim=keepdims)
 
     @staticmethod
     def place(arr, mask, vals):
@@ -105,8 +128,11 @@ class Linalg(object):
             c = Linalg.dot(X, X_T)
             c *= 1. / fact
             return c.squeeze()
-        else:
+        elif isinstance(m, numpy.ndarray):
             return numpy.cov(m, y)
+        else:
+            return cupy.cov(m, y)
+
 
 
     @staticmethod

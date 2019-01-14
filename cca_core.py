@@ -53,7 +53,7 @@ def positivedef_matrix_sqrt(array):
     w, v = linalg.eigh(array)
     # #  A - linalg.dot(v, linalg.dot(linalg.diag(w), v.T))
     wsqrt = linalg.sqrt(w)
-    sqrtarray = linalg.dot(v, linalg.dot(linalg.diag(wsqrt), linalg.conj(v).T))
+    sqrtarray = linalg.dot(v, linalg.dot(linalg.diag(wsqrt), linalg.transpose(linalg.conj(v))))
     return sqrtarray
 
 
@@ -276,7 +276,7 @@ def get_cca_similarity(acts1, acts2, epsilon=0., threshold=0.98,
     x_mask = linalg.dot(x_idxs.reshape((-1, 1)), x_idxs.reshape((1, -1)))
     y_mask = linalg.dot(y_idxs.reshape((-1, 1)), y_idxs.reshape((1, -1)))
 
-    return_dict["coef_x"] = u.T
+    return_dict["coef_x"] = linalg.transpose(u)
     return_dict["invsqrt_xx"] = invsqrt_xx
     return_dict["full_coef_x"] = linalg.zeros((numx, numx))
     linalg.place(return_dict["full_coef_x"], x_mask,
