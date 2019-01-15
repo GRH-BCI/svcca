@@ -1,7 +1,7 @@
 import cupy, numpy
 import pandas as pd
 import svcca.cca_core as cca_core
-import linalg
+import svcca.linalg as linalg
 
 
 def fft_resize(images, resize=False, new_size=None):

@@ -19,7 +19,7 @@ using numpy. Written to apply to neural network activations.
 
 """
 
-import linalg
+import svcca.linalg as linalg
 
 def get_pca(acts, compute_dirns=False):
     """ Takes in neuron activations acts and number of components.

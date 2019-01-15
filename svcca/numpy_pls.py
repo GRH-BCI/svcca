@@ -26,7 +26,7 @@ for more background on the methods.
 
 """
 
-import linalg
+import svcca.linalg as linalg
 
 def get_pls_similarity(acts1, acts2):
   """
