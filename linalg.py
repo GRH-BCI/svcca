@@ -76,7 +76,7 @@ class Linalg(object):
             return numpy.fft.fft2(arr.astype('complex64'), axes=axes)
 
     @staticmethod
-    def fft2(*args):
+    def ifft2(*args):
         if isinstance(args[0], torch.Tensor):
             raise ValueError('Complex Inverse Fourier does not work with PyTorch')
         elif isinstance(args[0], cupy.ndarray):
