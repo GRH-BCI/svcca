@@ -22,8 +22,8 @@ for full details.
 
 """
 
-import linalg
-import cca_core
+import svcca.linalg as linalg
+import svcca.cca_core as cca_core
 
 def compute_pwcca(acts1, acts2, epsilon=0.):
     """ Computes projection weighting for weighting CCA coefficients
