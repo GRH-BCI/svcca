@@ -22,7 +22,7 @@ for full details.
 
 """
 
-import cupy, numpy
+import linalg
 import cca_core
 
 def compute_pwcca(acts1, acts2, epsilon=0.):
@@ -30,34 +30,33 @@ def compute_pwcca(acts1, acts2, epsilon=0.):
 
     Args:
          acts1: 2d numpy array, shaped (neurons, num_datapoints)
-	 acts2: 2d numpy array, shaped (neurons, num_datapoints)
+     acts2: 2d numpy array, shaped (neurons, num_datapoints)
 
     Returns:
-	 Original cca coefficient mean and weighted mean
+     Original cca coefficient mean and weighted mean
 
     """
-    if isinstance(acts1, numpy.ndarray):
-      np = numpy
-    else:
-      np = cupy
     sresults = cca_core.get_cca_similarity(acts1, acts2, epsilon=epsilon,
-					   compute_dirns=False, compute_coefs=True, verbose=False)
-    if np.sum(sresults["x_idxs"]) <= np.sum(sresults["y_idxs"]):
-        dirns = np.dot(sresults["coef_x"],
+                       compute_dirns=False, compute_coefs=True, verbose=False)
+    if linalg.sum(sresults["x_idxs"]) <= linalg.sum(sresults["y_idxs"]):
+        dirns = linalg.dot(sresults["coef_x"],
                     (acts1[sresults["x_idxs"]] - \
                      sresults["neuron_means1"])) + sresults["neuron_means1"]
         coefs = sresults["cca_coef1"]
         acts = acts1
         idxs = sresults["x_idxs"]
     else:
-        dirns = np.dot(sresults["coef_y"],
+        dirns = linalg.dot(sresults["coef_y"],
                     (acts1[sresults["y_idxs"]] - \
                      sresults["neuron_means2"])) + sresults["neuron_means2"]
         coefs = sresults["cca_coef2"]
         acts = acts2
         idxs = sresults["y_idxs"]
-    P, _ = np.linalg.qr(dirns.T)
-    weights = np.sum(np.abs(np.dot(P.T, acts[idxs].T)), axis=1)
-    weights = weights/np.sum(weights)
+    P, _ = linalg.qr(linalg.transpose(dirns))
+    weights = linalg.sum(
+        linalg.abs(linalg.dot(linalg.transpose(P), linalg.transpose(acts[idxs]))),
+        axis=1
+    )
+    weights = weights/linalg.sum(weights)
 
-    return np.sum(weights*coefs), weights, coefs
+    return linalg.sum(weights*coefs), weights, coefs

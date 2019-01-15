@@ -1,6 +1,7 @@
 import cupy, numpy
 import pandas as pd
 import svcca.cca_core as cca_core
+import linalg
 
 
 def fft_resize(images, resize=False, new_size=None):
@@ -20,16 +21,10 @@ def fft_resize(images, resize=False, new_size=None):
         im_fft_downsampled: a numpy array with shape
                             [batch_size, (new) height, (new) width, num_channels]
     '''
-    if isinstance(images, numpy.ndarray):
-        np = numpy
-    else:
-        np = cupy
-
     assert len(images.shape) == 4, ('expecting images to be'
                                     '[batch_size, height, width, num_channels]')
 
-    im_complex = images.astype('complex64')
-    im_fft = np.fft.fft2(im_complex, axes=(1, 2))
+    im_fft = linalg.fft2(images, axes=(1, 2))
 
     # resizing images
     if resize:
@@ -38,8 +33,8 @@ def fft_resize(images, resize=False, new_size=None):
         # downsample by threshold
         width = im_fft.shape[2]
         new_width = new_size[0]
-        freqs = np.fft.fftfreq(width, d=1.0 / width)
-        idxs = np.flatnonzero((freqs >= -new_width / 2.0) & (freqs < new_width / 2.0))
+        freqs = linalg.fftfreq(width, d=1.0 / width)
+        idxs = linalg.flatnonzero((freqs >= -new_width / 2.0) & (freqs < new_width / 2.0))
         im_fft_downsampled = im_fft[:, :, idxs, :][:, idxs, :, :]
 
     else:
@@ -75,11 +70,6 @@ def fourier_ccas(conv_acts1, conv_acts2, return_coefs=False,
                      statistics. If compute_dirns=True, the cca directions
                      are also computed.
     '''
-    if isinstance(conv_acts1, numpy.ndarray):
-        np = numpy
-    else:
-        np = cupy
-
     height1, width1 = conv_acts1.shape[1], conv_acts1.shape[2]
     height2, width2 = conv_acts2.shape[1], conv_acts2.shape[2]
     if height1 != height2 or width1 != width2:
@@ -110,17 +100,17 @@ def fourier_ccas(conv_acts1, conv_acts2, return_coefs=False,
 
             # apply inverse FFT to get coefficients and directions if specified
             if return_coefs:
-                results_dict['neuron_coeffs1'] = np.fft.ifft2(
+                results_dict['neuron_coeffs1'] = linalg.ifft2(
                     results_dict['neuron_coeffs1'])
-                results_dict['neuron_coeffs2'] = np.fft.ifft2(
+                results_dict['neuron_coeffs2'] = linalg.ifft2(
                     results_dict['neuron_coeffs2'])
             else:
                 del results_dict['neuron_coeffs1']
                 del results_dict['neuron_coeffs2']
 
             if compute_dirns:
-                results_dict['cca_dirns1'] = np.fft.ifft2(results_dict['cca_dirns1'])
-                results_dict['cca_dirns2'] = np.fft.ifft2(results_dict['cca_dirns2'])
+                results_dict['cca_dirns1'] = linalg.ifft2(results_dict['cca_dirns1'])
+                results_dict['cca_dirns2'] = linalg.ifft2(results_dict['cca_dirns2'])
 
             # accumulate results
             results_dict['location'] = (i, j)

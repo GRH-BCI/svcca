@@ -19,7 +19,7 @@ using numpy. Written to apply to neural network activations.
 
 """
 
-import cupy, numpy
+import linalg
 
 def get_pca(acts, compute_dirns=False):
     """ Takes in neuron activations acts and number of components.
@@ -31,24 +31,19 @@ def get_pca(acts, compute_dirns=False):
                           to
 
     """
-    if isinstance(acts, numpy.ndarray):
-        np = numpy
-    else:
-        np = cupy
-
     assert acts.shape[0] < acts.shape[1], ("input must be number of neurons"
                                            "by datapoints")
 
     # center activations
-    means = np.mean(acts, axis=0, keepdims=True)
+    means = linalg.mean(acts, axis=0, keepdims=True)
     cacts = acts - means
 
     # compute PCA using SVD
-    U, S, V = np.linalg.svd(cacts, full_matrices=False)
+    U, S, V = linalg.svd(cacts, full_matrices=False)
     return_dict = {}
     return_dict["eigenvals"]  = S
     return_dict["neuron_coefs"] = U.T
     if compute_dirns:
-        return_dict["pca_dirns"] = np.dot(U.T, cacts) + means
+        return_dict["pca_dirns"] = linalg.dot(U.T, cacts) + means
 
     return return_dict

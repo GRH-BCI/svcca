@@ -23,10 +23,15 @@ class Linalg(object):
             'cov': Linalg.cov,
             'dot': Linalg.dot,
             'asarray': Linalg.asarray,
+            'svd': Linalg.svd,
             'pinv': Linalg.pinv,
             'conj': Linalg.conj,
             'transpose': Linalg.transpose,
             'mean': Linalg.mean,
+            'fft2': Linalg.fft2,
+            'ifft2': Linalg.ifft2,
+            'fftfreq': Linalg.fftfreq,
+            'flatnonzero': Linalg.flatnonzero,
         }
 
     @staticmethod
@@ -51,6 +56,51 @@ class Linalg(object):
             return arr
         else:
             return arr.conj()
+
+    @staticmethod
+    def svd(arr, full_matrices=True, compute_uv=True):
+        if isinstance(arr, torch.Tensor):
+            return torch.svd(arr, some=not full_matrices, compute_uv=compute_uv)
+        elif isinstance(arr, cupy.ndarray):
+            return cupy.linalg.svd(arr, full_matrices=full_matrices, compute_uv=compute_uv)
+        else:
+            return numpy.linalg.svd(arr, full_matrices=full_matrices, compute_uv=compute_uv)
+
+    @staticmethod
+    def fft2(arr, axes):
+        if isinstance(arr, torch.Tensor):
+            raise ValueError('Complex Fourier does not work with PyTorch')
+        elif isinstance(arr, cupy.ndarray):
+            return cupy.fft.fft2(arr.astype('complex64'), axes=axes)
+        else:
+            return numpy.fft.fft2(arr.astype('complex64'), axes=axes)
+
+    @staticmethod
+    def fft2(*args):
+        if isinstance(args[0], torch.Tensor):
+            raise ValueError('Complex Inverse Fourier does not work with PyTorch')
+        elif isinstance(args[0], cupy.ndarray):
+            return cupy.fft.ifft2(*args)
+        else:
+            return numpy.fft.ifft2(*args)
+
+    @staticmethod
+    def fftfreq(*args):
+        if isinstance(args[0], torch.Tensor):
+            raise ValueError('FFTfreq does not work with PyTorch')
+        elif isinstance(args[0], cupy.ndarray):
+            return cupy.fft.fftfreq(*args)
+        else:
+            return numpy.fft.fftfreq(*args)
+
+    @staticmethod
+    def flatnonzero(*args):
+        if isinstance(args[0], torch.Tensor):
+            raise ValueError('Flatnonzero does not work with PyTorch')
+        elif isinstance(args[0], cupy.ndarray):
+            return cupy.flatnonzero(*args)
+        else:
+            return numpy.flatnonzero(*args)
 
     @staticmethod
     def mean(*args, **kwargs):

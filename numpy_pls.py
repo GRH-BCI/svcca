@@ -26,7 +26,7 @@ for more background on the methods.
 
 """
 
-import cupy, numpy
+import linalg
 
 def get_pls_similarity(acts1, acts2):
   """
@@ -63,11 +63,6 @@ def get_pls_similarity(acts1, acts2):
                          compute_dirns=True, the cca directions are also
                          computed.
   """
-  if isinstance(acts, numpy.ndarray):
-      np = numpy
-  else:
-      np = cupy
-
   # assert dimensionality equal
   assert acts1.shape[1] == acts2.shape[1], "dimensions don't match"
   # check that acts1, acts2 are transposition
@@ -78,7 +73,7 @@ def get_pls_similarity(acts1, acts2):
   # compute covariance with numpy function for extra stability
   numx = acts1.shape[0]
 
-  covariance = np.cov(acts1, acts2)
+  covariance = linalg.cov(acts1, acts2)
   sigmaxx = covariance[:numx, :numx]
   sigmaxy = covariance[:numx, numx:]
   sigmayx = covariance[numx:, :numx]
@@ -87,12 +82,12 @@ def get_pls_similarity(acts1, acts2):
   # compute Partial Least Squares of cross covariance using
   # SVD. Columns of U are coefficients for acts1, rows of V
   # are coefficients for acts2.
-  U, S, V = np.linalg.svd(sigmaxy, full_matrices=False)
-  S = np.abs(S)
+  U, S, V = linalg.svd(sigmaxy, full_matrices=False)
+  S = linalg.abs(S)
 
   # compute means
-  neuron_means1 = np.mean(acts1, axis=0, keepdims=True)
-  neuron_means2 = np.mean(acts2, axis=0, keepdims=True)
+  neuron_means1 = linalg.mean(acts1, axis=0, keepdims=True)
+  neuron_means2 = linalg.mean(acts2, axis=0, keepdims=True)
 
   # collect return values
   return_dict = {}
@@ -100,8 +95,8 @@ def get_pls_similarity(acts1, acts2):
   return_dict["neuron_coeffs1"] = U.T
   return_dict["neuron_coeffs2"] = V
 
-  pls_dirns1 = np.dot(U.T, (acts1 - neuron_means1)) + neuron_means1
-  pls_dirns2 = np.dot(V, (acts2 - neuron_means2)) + neuron_means2
+  pls_dirns1 = linalg.dot(U.T, (acts1 - neuron_means1)) + neuron_means1
+  pls_dirns2 = linalg.dot(V, (acts2 - neuron_means2)) + neuron_means2
 
   return_dict["pls_dirns1"] = pls_dirns1
   return_dict["pls_dirns2"] = pls_dirns2
