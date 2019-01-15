@@ -36,7 +36,6 @@ for full details.
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-import numpy, cupy, torch
 import linalg
 
 
@@ -78,10 +77,6 @@ def remove_small(sigma_xx, sigma_xy, sigma_yx, sigma_yy, epsilon):
             y_idxs: indexes of sigma_yy that were removed
   """
 
-  if isinstance(sigma_xx, numpy.ndarray):
-    np = numpy
-  else:
-    np = cupy
   x_diag = linalg.abs(linalg.diagonal(sigma_xx))
   y_diag = linalg.abs(linalg.diagonal(sigma_yy))
   x_idxs = (x_diag >= epsilon)
@@ -236,10 +231,6 @@ def get_cca_similarity(acts1, acts2, epsilon=0., threshold=0.98,
                          compute_dirns=True, the cca directions are also
                          computed.
   """
-  if isinstance(acts1, numpy.ndarray):
-      np = numpy
-  else:
-      np = cupy
 
   # assert dimensionality equal
   assert acts1.shape[1] == acts2.shape[1], "dimensions don't match"
