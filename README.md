@@ -1,13 +1,22 @@
 # About this fork
 
-This is a Python 3 port of the original SVCCA code onto the GPU. This is
-realized with the help of [Cupy](https://github.com/cupy/cupy/).
+This is a Python 3 port of the original SVCCA code so that it runs with Numpy,
+CuPy and PyTorch (the latter two on the GPU). I also made this a `setuptools`
+package so you can install it environment-wide
 
-It should be noted that this code will **not** run faster than the CPU
-implementation, since the runtime is dominated by calls to SVD. The `gesvd`
-routine used by Cupy is slower (but more precise) than `gsedd` (which is e.g. in
-MAGMA), but I doubt that would help much. The speed advantage decreases with
-increasing matrix size.
+## Installation
+Run `pip install -e .` or `python setup.py install` to install locally, or use
+`python setup.py develop` to only install links to the source, so any editions
+made will immediately be reflected in the installed package without having to
+install again.
+
+## Limitations
+
+* All fourier stuff only works with Numpy and Cupy since there is no native
+  complex support in PyTorch
+* For real-valued data (the usual case), this does run faster on the GPU, with
+  an increasing advantage with increasing matrix sizes. However, the speedup for
+  realistic cases will be closer to 2x
 
 Original README below.
 ---
