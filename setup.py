@@ -9,7 +9,7 @@ with open('README.md') as f:
 
 packages = setuptools.find_packages('.')
 
-setup(name='svcca-gpu',
+setup(name='svcca',
       version='0.0.1',
       description='SVCCA on Numpy, Cupy, and PyTorch',
       long_description=readme,
