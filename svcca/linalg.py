@@ -200,9 +200,7 @@ class Linalg(object):
     @staticmethod
     def eigh(array):
         if isinstance(array, torch.Tensor):
-            w, v = torch.eig(array, eigenvectors=True)
-            w = w[:, 0].sort()[0]
-            return w, v
+            return torch.symeig(array, eigenvectors=True, upper=False)
         elif isinstance(array, cupy.ndarray):
             return cupy.linalg.eigh(array)
         else:
