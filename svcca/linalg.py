@@ -1,6 +1,7 @@
 import numpy, cupy, torch
 
 
+
 # class ProxyTensor(object):
 
 #     def __init__(self, arg):
@@ -41,7 +42,7 @@ class Linalg(object):
         elif module == 'cupy':
             return cupy.asarray(arg)
         else:
-            return torch.Tensor(arg)
+            return torch.Tensor(arg, device=torch.cuda.current_device())
 
     @staticmethod
     def transpose(arg):
@@ -125,7 +126,6 @@ class Linalg(object):
         else:
             return numpy.place(arr, mask, vals)
 
-
     @staticmethod
     def cupy_place(arr, mask, vals):
         n = mask.sum()
@@ -135,7 +135,6 @@ class Linalg(object):
             vals = cupy.repeat(vals, int(reps), axis=0)
             arr[mask] = vals[:n]
 
-
     @staticmethod
     def torch_place(arr, mask, vals):
         n = mask.sum()
@@ -144,7 +143,6 @@ class Linalg(object):
             reps = torch.ceil(n / vals.numel())
             vals = torch.repeat(vals, reps)
             arr[mask] = vals[:n]
-
 
     @staticmethod
     def cov(m, y=None):
@@ -158,7 +156,7 @@ class Linalg(object):
 
             X = m
             if X.shape[0] == 0:
-                return torch.tensor([]).reshape(0, 0)
+                return torch.tensor([], device=torch.cuda.current_device()).reshape(0, 0)
             if y is not None:
                 X = torch.cat((X, y), dim=0)
 
@@ -193,7 +191,7 @@ class Linalg(object):
                 raise ValueError('Torch matmul does not work with scalars.')
             if a.ndimension() > 2 and b.ndimension() > 2:
                 raise ValueError('Torch matmul with multidimensional matrices currently unsupported.')
-            return torch.matmul(a, b, out=out)
+            return torch.matmul(a.to(dtype=torch.float32), b.to(dtype=torch.float32), out=out)
         elif isinstance(a, cupy.ndarray):
             return cupy.dot(a, b, out=out)
         else:
@@ -219,17 +217,17 @@ class Linalg(object):
         else:
             return numpy.linalg.pinv(array)
 
-
     @staticmethod
     def method_exists(name):
         exists = [False, False, False]
         if hasattr(torch, name):
             exists[0] = True
-            if hasattr(numpy, name) or hasattr(numpy.linalg, name):
-                exists[1] = True
-                if hasattr(cupy, name) or hasattr(cupy.linalg, name):
-                    exists[2] = True
-                    return all(exists)
+        if hasattr(numpy, name) or hasattr(numpy.linalg, name):
+            exists[1] = True
+        if hasattr(cupy, name) or hasattr(cupy.linalg, name):
+            exists[2] = True
+
+        return all(exists)
 
     @staticmethod
     def get_numpy(name):
@@ -265,7 +263,10 @@ class Linalg(object):
                 self._method_getter = Linalg.get_cupy
             elif isinstance(args[0], numpy.ndarray):
                 self._method_getter = Linalg.get_numpy
-            return self._method_getter(name)(*args, **kwargs)
+            try:
+                return self._method_getter(name)(*args, **kwargs, device=torch.cuda.current_device())
+            except TypeError:
+                return self._method_getter(name)(*args, **kwargs)
 
         return wrapped
 
