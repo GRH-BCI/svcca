@@ -16,7 +16,8 @@ install again.
   complex support in PyTorch
 * For real-valued data (the usual case), this does run faster on the GPU, with
   an increasing advantage with increasing matrix sizes. However, the speedup for
-  realistic cases will be closer to 2x
+  realistic cases will be closer to 2x for CuPy and 3x for PyTorch compared to
+  the Numpy version with MKL
 
 Original README below.
 ---
