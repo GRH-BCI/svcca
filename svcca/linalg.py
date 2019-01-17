@@ -1,19 +1,6 @@
 import numpy, cupy, torch
 
 
-
-# class ProxyTensor(object):
-
-#     def __init__(self, arg):
-#         self._init_arg = arg
-
-#     def __add__(self, other):
-#         if isinstance(other, numpy.ndarray):
-#             return numpy.asarray(self._init_arg) + other
-#         if isinstance(other, numpy.ndarray):
-#             return numpy.asarray(self._init_arg) + other
-
-
 class Linalg(object):
 
     def __init__(self):
@@ -200,11 +187,12 @@ class Linalg(object):
     @staticmethod
     def eigh(array):
         if isinstance(array, torch.Tensor):
-            return torch.symeig(array, eigenvectors=True, upper=False)
+            w, v = torch.symeig(array, eigenvectors=True, upper=False)
         elif isinstance(array, cupy.ndarray):
-            return cupy.linalg.eigh(array)
+            w, v = cupy.linalg.eigh(array)
         else:
-            return numpy.linalg.eigh(array)
+            w, v = numpy.linalg.eigh(array)
+        return w, v
 
     @staticmethod
     def pinv(array):
