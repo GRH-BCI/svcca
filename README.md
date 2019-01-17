@@ -10,6 +10,11 @@ Run `pip install -e .` or `python setup.py install` to install locally, or use
 made will immediately be reflected in the installed package without having to
 install again.
 
+In a `requirements.txt` file, you can list this repository as a dependency like this (no PyPi for the moment)
+```
+git+https://github.com/themightyoarfish/svcca-gpu#egg=svcca
+```
+
 ## Limitations
 
 * All fourier stuff only works with Numpy and Cupy since there is no native
