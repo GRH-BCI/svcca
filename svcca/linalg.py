@@ -138,7 +138,7 @@ class Linalg(object):
             if m.ndimension() > 2:
                 raise ValueError("m has more than 2 dimensions")
 
-            if y.ndimension() > 2:
+            if y is not None and y.ndimension() > 2:
                 raise ValueError('y has more than 2 dimensions')
 
             X = m
