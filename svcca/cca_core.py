@@ -34,6 +34,7 @@ for full details.
 """
 
 import svcca.linalg as linalg
+from numpy import LinAlgError
 
 
 def positivedef_matrix_sqrt(array):
@@ -355,7 +356,7 @@ def robust_cca_similarity(acts1, acts2, threshold=0.98, epsilon=1e-6,
   for trial in range(num_cca_trials):
     try:
       return_dict = get_cca_similarity(acts1, acts2, threshold, compute_dirns)
-    except np.LinAlgError, RuntimeError:
+    except (LinAlgError, RuntimeError):
       acts1 = linalg.add_normal(acts1 * 1e-1, epsilon)
       acts2 = linalg.add_normal(acts2 * 1e-1, epsilon)
       if trial + 1 == num_cca_trials:
