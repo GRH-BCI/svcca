@@ -39,7 +39,7 @@ class Linalg(object):
     @staticmethod
     def add_normal(array, multiplier):
         if isinstance(array, torch.Tensor):
-            return array + torch.randn(array.shape) * multiplier
+            return array + torch.randn_like(array) * multiplier
         elif isinstance(array, numpy.ndarray):
             return array + numpy.random.normal(size=array.shape) * multiplier
         else:

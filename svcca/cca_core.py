@@ -320,8 +320,8 @@ def get_cca_similarity(acts1, acts2, epsilon=0., threshold=0.98,
 num_cca_trials = 5
 
 
-def robust_cca_similarity(acts1, acts2, threshold=0.98, epsilon=1e-6,
-                          compute_dirns=True):
+def robust_cca_similarity(acts1, acts2, threshold=0.98, normal_epsilon=1e-6,
+                          compute_dirns=True, **kwargs):
   """Calls get_cca_similarity multiple times while adding noise.
   This function is very similar to get_cca_similarity, and can be used if
   get_cca_similarity doesn't converge for some pair of inputs. This function
@@ -355,11 +355,11 @@ def robust_cca_similarity(acts1, acts2, threshold=0.98, epsilon=1e-6,
 
   for trial in range(num_cca_trials):
     try:
-      return_dict = get_cca_similarity(acts1, acts2, threshold, compute_dirns)
+      return_dict = get_cca_similarity(acts1, acts2, threshold=threshold,
+                                       compute_dirns=compute_dirns, **kwargs)
+      return return_dict
     except (LinAlgError, RuntimeError):
-      acts1 = linalg.add_normal(acts1 * 1e-1, epsilon)
-      acts2 = linalg.add_normal(acts2 * 1e-1, epsilon)
+      acts1 = linalg.add_normal(acts1 * 1e-1, normal_epsilon)
+      acts2 = linalg.add_normal(acts2 * 1e-1, normal_epsilon)
       if trial + 1 == num_cca_trials:
         raise
-
-  return return_dict
