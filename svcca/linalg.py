@@ -4,13 +4,11 @@ import numpy, cupy, torch
 class Linalg(object):
 
     def __init__(self):
-        self._method_getter = None
         self.overloads = {
             'eigh': Linalg.eigh,
             'place': Linalg.place,
             'cov': Linalg.cov,
             'dot': Linalg.dot,
-            'asarray': Linalg.asarray,
             'svd': Linalg.svd,
             'pinv': Linalg.pinv,
             'conj': Linalg.conj,
@@ -20,16 +18,8 @@ class Linalg(object):
             'ifft2': Linalg.ifft2,
             'fftfreq': Linalg.fftfreq,
             'flatnonzero': Linalg.flatnonzero,
+            'add_normal': Linalg.add_normal
         }
-
-    @staticmethod
-    def asarray(arg, module):
-        if module == 'numpy':
-            return numpy.asarray(arg)
-        elif module == 'cupy':
-            return cupy.asarray(arg)
-        else:
-            return torch.Tensor(arg, device=torch.cuda.current_device())
 
     @staticmethod
     def transpose(arg):
@@ -44,6 +34,15 @@ class Linalg(object):
             return arr
         else:
             return arr.conj()
+
+    @staticmethod
+    def add_normal(array, multiplier):
+        if isinstance(array, torch.Tensor):
+            return array + torch.randn(array.shape) * multiplier
+        elif isinstance(array, numpy.ndarray):
+            return array + numpy.random.normal(size=array.shape) * multiplier
+        else:
+            return cupy + cupy.random.normal(size=array.shape) * multiplier
 
     @staticmethod
     def svd(arr, full_matrices=True, compute_uv=True):
@@ -234,7 +233,6 @@ class Linalg(object):
         if hasattr(torch, name):
             return getattr(torch, name)
 
-
     def __getattr__(self, name):
 
         if not Linalg.method_exists(name):
@@ -244,15 +242,15 @@ class Linalg(object):
             if name in self.overloads:
                 return self.overloads[name](*args, **kwargs)
             elif isinstance(args[0], torch.Tensor):
-                self._method_getter = Linalg.get_torch
+                method_getter = Linalg.get_torch
             elif isinstance(args[0], cupy.ndarray):
-                self._method_getter = Linalg.get_cupy
+                method_getter = Linalg.get_cupy
             elif isinstance(args[0], numpy.ndarray):
-                self._method_getter = Linalg.get_numpy
+                method_getter = Linalg.get_numpy
             try:
-                return self._method_getter(name)(*args, **kwargs, device=torch.cuda.current_device())
+                return method_getter(name)(*args, **kwargs, device=torch.cuda.current_device())
             except TypeError:
-                return self._method_getter(name)(*args, **kwargs)
+                return method_getter(name)(*args, **kwargs)
 
         return wrapped
 

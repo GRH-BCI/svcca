@@ -175,7 +175,7 @@ def sum_threshold(array, threshold):
   Returns:
             i: index at which linalg.sum(array[:i]) >= threshold
   '''
-  assert (threshold >= 0) and (threshold <= 1), 'print incorrect threshold'
+  assert (threshold >= 0) and (threshold <= 1), 'incorrect threshold'
 
   for i in range(len(array)):
     if linalg.sum(array[:i])/linalg.sum(array) >= threshold:
@@ -232,7 +232,7 @@ def get_cca_similarity(acts1, acts2, epsilon=0., threshold=0.98,
   # assert dimensionality equal
   assert acts1.shape[1] == acts2.shape[1], "dimensions don't match"
   # check that acts1, acts2 are transposition
-  assert acts1.shape[0] < acts1.shape[1], ("input must be number of neurons"
+  assert acts1.shape[0] < acts1.shape[1], ("input must be number of neurons "
                                            "by datapoints")
   return_dict = {}
 
@@ -312,5 +312,53 @@ def get_cca_similarity(acts1, acts2, epsilon=0., threshold=0.98,
   if compute_dirns:
     return_dict["cca_dirns1"] = cca_dirns1
     return_dict["cca_dirns2"] = cca_dirns2
+
+  return return_dict
+
+
+num_cca_trials = 5
+
+
+def robust_cca_similarity(acts1, acts2, threshold=0.98, epsilon=1e-6,
+                          compute_dirns=True):
+  """Calls get_cca_similarity multiple times while adding noise.
+  This function is very similar to get_cca_similarity, and can be used if
+  get_cca_similarity doesn't converge for some pair of inputs. This function
+  adds some noise to the activations to help convergence.
+  Args:
+            acts1: (num_neurons1, data_points) a 2d numpy array of neurons by
+                   datapoints where entry (i,j) is the output of neuron i on
+                   datapoint j.
+            acts2: (num_neurons2, data_points) same as above, but (potentially)
+                   for a different set of neurons. Note that acts1 and acts2
+                   can have different numbers of neurons, but must agree on the
+                   number of datapoints
+            threshold: float between 0, 1 used to get rid of trailing zeros in
+                       the cca correlation coefficients to output more accurate
+                       summary statistics of correlations.
+            epsilon: small float to help stabilize computations
+            compute_dirns: boolean value determining whether actual cca
+                           directions are computed. (For very large neurons and
+                           datasets, may be better to compute these on the fly
+                           instead of store in memory.)
+  Returns:
+            return_dict: A dictionary with outputs from the cca computations.
+                         Contains neuron coefficients (combinations of neurons
+                         that correspond to cca directions), the cca correlation
+                         coefficients (how well aligned directions correlate),
+                         x and y idxs (for computing cca directions on the fly
+                         if compute_dirns=False), and summary statistics. If
+                         compute_dirns=True, the cca directions are also
+                         computed.
+  """
+
+  for trial in range(num_cca_trials):
+    try:
+      return_dict = get_cca_similarity(acts1, acts2, threshold, compute_dirns)
+    except np.LinAlgError, RuntimeError:
+      acts1 = linalg.add_normal(acts1 * 1e-1, epsilon)
+      acts2 = linalg.add_normal(acts2 * 1e-1, epsilon)
+      if trial + 1 == num_cca_trials:
+        raise
 
   return return_dict
