@@ -4,6 +4,7 @@ import numpy, cupy, torch
 class Linalg(object):
 
     def __init__(self):
+        self._method_getter = None
         self.overloads = {
             'eigh': Linalg.eigh,
             'place': Linalg.place,
@@ -242,15 +243,15 @@ class Linalg(object):
             if name in self.overloads:
                 return self.overloads[name](*args, **kwargs)
             elif isinstance(args[0], torch.Tensor):
-                method_getter = Linalg.get_torch
+                self._method_getter = Linalg.get_torch
             elif isinstance(args[0], cupy.ndarray):
-                method_getter = Linalg.get_cupy
+                self._method_getter = Linalg.get_cupy
             elif isinstance(args[0], numpy.ndarray):
-                method_getter = Linalg.get_numpy
+                self._method_getter = Linalg.get_numpy
             try:
-                return method_getter(name)(*args, **kwargs, device=torch.cuda.current_device())
+                return self._method_getter(name)(*args, **kwargs, device=torch.cuda.current_device())
             except TypeError:
-                return method_getter(name)(*args, **kwargs)
+                return self._method_getter(name)(*args, **kwargs)
 
         return wrapped
 
