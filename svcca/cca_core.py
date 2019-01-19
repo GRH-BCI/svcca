@@ -34,7 +34,7 @@ for full details.
 """
 
 import svcca.linalg as linalg
-from numpy import LinAlgError
+from numpy.linalg import LinAlgError
 
 
 def positivedef_matrix_sqrt(array):
