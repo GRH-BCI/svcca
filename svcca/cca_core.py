@@ -185,7 +185,8 @@ def sum_threshold(array, threshold):
 def get_cca_similarity(acts1, acts2, epsilon=0., threshold=0.98,
                        compute_coefs=True,
                        compute_dirns=False,
-                       verbose=True):
+                       verbose=True,
+                       rescale=True):
   """The main function for computing cca similarities.
 
   This function computes the cca similarity between two sets of activations,
@@ -237,7 +238,6 @@ def get_cca_similarity(acts1, acts2, epsilon=0., threshold=0.98,
                                            "by datapoints")
   return_dict = {}
 
-  # compute covariance with numpy function for extra stability
   numx = acts1.shape[0]
   numy = acts2.shape[0]
 
@@ -248,12 +248,14 @@ def get_cca_similarity(acts1, acts2, epsilon=0., threshold=0.98,
   sigmayy = covariance[numx:, numx:]
 
   # rescale covariance to make cca computation more stable
-  xmax = linalg.max(linalg.abs(sigmaxx))
-  ymax = linalg.max(linalg.abs(sigmayy))
-  sigmaxx /= xmax
-  sigmayy /= ymax
-  sigmaxy /= linalg.sqrt(xmax * ymax)
-  sigmayx /= linalg.sqrt(xmax * ymax)
+  # CCA is invariant to linear transforms, so this should not make a difference semantically
+  if rescale:
+    xmax = linalg.max(linalg.abs(sigmaxx))
+    ymax = linalg.max(linalg.abs(sigmayy))
+    sigmaxx /= xmax
+    sigmayy /= ymax
+    sigmaxy /= linalg.sqrt(xmax * ymax)
+    sigmayx /= linalg.sqrt(xmax * ymax)
 
   ([u, s, v], invsqrt_xx, invsqrt_yy,
    x_idxs, y_idxs) = compute_ccas(sigmaxx, sigmaxy, sigmayx, sigmayy,
