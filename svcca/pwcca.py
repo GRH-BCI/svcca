@@ -25,7 +25,7 @@ for full details.
 import svcca.linalg as linalg
 import svcca.cca_core as cca_core
 
-def compute_pwcca(acts1, acts2, epsilon=0.):
+def compute_pwcca(acts1, acts2, epsilon=0., **kwargs):
     """ Computes projection weighting for weighting CCA coefficients
 
     Args:
@@ -37,7 +37,7 @@ def compute_pwcca(acts1, acts2, epsilon=0.):
 
     """
     sresults = cca_core.get_cca_similarity(acts1, acts2, epsilon=epsilon,
-                       compute_dirns=False, compute_coefs=True, verbose=False)
+                       compute_dirns=False, compute_coefs=True, **kwargs)
     if linalg.sum(sresults["x_idxs"]) <= linalg.sum(sresults["y_idxs"]):
         dirns = linalg.dot(sresults["coef_x"],
                     (acts1[sresults["x_idxs"]] - \

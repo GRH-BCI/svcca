@@ -19,7 +19,8 @@ class Linalg(object):
             'ifft2': Linalg.ifft2,
             'fftfreq': Linalg.fftfreq,
             'flatnonzero': Linalg.flatnonzero,
-            'add_normal': Linalg.add_normal
+            'add_normal': Linalg.add_normal,
+            'sum': Linalg.sum
         }
 
     @staticmethod
@@ -35,6 +36,15 @@ class Linalg(object):
             return arr
         else:
             return arr.conj()
+
+    @staticmethod
+    def sum(array, axis=0, keepdims=False):
+        if isinstance(array, torch.Tensor):
+            return array.sum(dim=axis, keepdim=keepdims)
+        elif isinstance(array, numpy.ndarray):
+            return numpy.sum(array, axis=axis, keepdims=keepdims)
+        else:
+            return cupy.sum(array, axis=axis, keepdims=keepdims)
 
     @staticmethod
     def add_normal(array, multiplier):
@@ -156,7 +166,7 @@ class Linalg(object):
             if fact <= 0:
                 import warnings
                 warnings.warn("Degrees of freedom <= 0 for slice",
-                            RuntimeWarning, stacklevel=2)
+                              RuntimeWarning, stacklevel=2)
                 fact = 0.0
 
             X -= avg[:, None]
@@ -168,8 +178,6 @@ class Linalg(object):
             return numpy.cov(m, y)
         else:
             return cupy.cov(m, y)
-
-
 
     @staticmethod
     def dot(a, b, out=None):
@@ -249,11 +257,14 @@ class Linalg(object):
             elif isinstance(args[0], numpy.ndarray):
                 self._method_getter = Linalg.get_numpy
             try:
-                return self._method_getter(name)(*args, **kwargs, device=torch.cuda.current_device())
+                return self._method_getter(name)(*args,
+                                                 **kwargs,
+                                                 device=torch.cuda.current_device())
             except TypeError:
                 return self._method_getter(name)(*args, **kwargs)
 
         return wrapped
+
 
 import sys
 sys.modules[__name__] = Linalg()
