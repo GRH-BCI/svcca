@@ -22,7 +22,7 @@ setup(name='svcca',
                    'License :: OSI Approved :: Apache License',
                    'Intended Audience :: Developers',
                    ],
-      keywords=['deep-learning pytorch cupy numpy svcca neural-networks machine-learning'],
+      keywords='deep-learning pytorch cupy numpy svcca neural-networks machine-learning'.split(),
       packages=packages,
       zip_safe=False,   # don't install egg, but source
       )
