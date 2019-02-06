@@ -7,7 +7,10 @@ import os
 with open('README.md') as f:
     readme = f.read()
 
-packages = setuptools.find_packages('.')
+with open('requirements.txt') as f:
+    requirements = f.read().split()
+
+packages = setuptools.find_packages('.', include='svcca.*')
 
 setup(name='svcca',
       version='0.0.1',
@@ -23,6 +26,7 @@ setup(name='svcca',
                    'Intended Audience :: Developers',
                    ],
       keywords='deep-learning pytorch cupy numpy svcca neural-networks machine-learning'.split(),
+      install_requires=requirements,
       packages=packages,
       zip_safe=False,   # don't install egg, but source
       )
