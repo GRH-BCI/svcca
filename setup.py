@@ -4,10 +4,12 @@ from distutils.core import setup
 import setuptools
 import os
 
-with open('README.md') as f:
+root_dir = os.path.abspath(os.path.dirname(__file__))
+
+with open(f'{root_dir}/README.md') as f:
     readme = f.read()
 
-with open('requirements.txt') as f:
+with open(f'{root_dir}/requirements.txt') as f:
     requirements = f.read().split()
 
 packages = setuptools.find_packages('.', include='svcca.*')
