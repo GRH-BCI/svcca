@@ -32,76 +32,76 @@ for more background on the methods.
 import svcca.linalg as linalg
 
 def get_pls_similarity(acts1, acts2):
-  '''
+    '''
 
-  This function computes Partial Least Squares between two sets of activations.
+    This function computes Partial Least Squares between two sets of activations.
 
-  Args:
-            acts1: (num_neurons1, data_points) a 2d numpy array of neurons by
-                   datapoints where entry (i,j) is the output of neuron i on
-                   datapoint j.
-            acts2: (num_neurons2, data_points) same as above, but (potentially)
-                   for a different set of neurons. Note that acts1 and acts2
-                   can have different numbers of neurons, but must agree on the
-                   number of datapoints
+    Args:
+              acts1: (num_neurons1, data_points) a 2d numpy array of neurons by
+                     datapoints where entry (i,j) is the output of neuron i on
+                     datapoint j.
+              acts2: (num_neurons2, data_points) same as above, but (potentially)
+                     for a different set of neurons. Note that acts1 and acts2
+                     can have different numbers of neurons, but must agree on the
+                     number of datapoints
 
-            threshold: float between 0, 1 used to get rid of trailing zeros in
-                       the cca correlation coefficients to output more accurate
-                       summary statistics of correlations.
+              threshold: float between 0, 1 used to get rid of trailing zeros in
+                         the cca correlation coefficients to output more accurate
+                         summary statistics of correlations.
 
-            compute_dirns: boolean value determining whether actual cca
-                           directions are computed. (For very large neurons and
-                           datasets, may be better to compute these on the fly
-                           instead of store in memory.)
+              compute_dirns: boolean value determining whether actual cca
+                             directions are computed. (For very large neurons and
+                             datasets, may be better to compute these on the fly
+                             instead of store in memory.)
 
-            verbose: Boolean, whether info about intermediate outputs printed
+              verbose: Boolean, whether info about intermediate outputs printed
 
-  Returns:
-            return_dict: A dictionary with outputs from the cca computations.
-                         Contains neuron coefficients (combinations of neurons
-                         that correspond to cca directions), the cca correlation
-                         coefficients (how well aligned directions correlate),
-                         x and y idxs (for computing cca directions on the fly
-                         if compute_dirns=False), and summary statistics. If
-                         compute_dirns=True, the cca directions are also
-                         computed.
-  '''
-  # assert dimensionality equal
-  assert acts1.shape[1] == acts2.shape[1], 'dimensions don\'t match'
-  # check that acts1, acts2 are transposition
-  assert acts1.shape[0] < acts1.shape[1], 'input must be number of neurons by datapoints'
-  return_dict = {}
+    Returns:
+              return_dict: A dictionary with outputs from the cca computations.
+                           Contains neuron coefficients (combinations of neurons
+                           that correspond to cca directions), the cca correlation
+                           coefficients (how well aligned directions correlate),
+                           x and y idxs (for computing cca directions on the fly
+                           if compute_dirns=False), and summary statistics. If
+                           compute_dirns=True, the cca directions are also
+                           computed.
+    '''
+    # assert dimensionality equal
+    assert acts1.shape[1] == acts2.shape[1], 'dimensions don\'t match'
+    # check that acts1, acts2 are transposition
+    assert acts1.shape[0] < acts1.shape[1], 'input must be number of neurons by datapoints'
+    return_dict = {}
 
-  # compute covariance with numpy function for extra stability
-  numx = acts1.shape[0]
+    # compute covariance with numpy function for extra stability
+    numx = acts1.shape[0]
 
-  covariance = linalg.cov(acts1, acts2)
-  sigmaxx = covariance[:numx, :numx]
-  sigmaxy = covariance[:numx, numx:]
-  sigmayx = covariance[numx:, :numx]
-  sigmayy = covariance[numx:, numx:]
+    covariance = linalg.cov(acts1, acts2)
+    sigmaxx = covariance[:numx, :numx]
+    sigmaxy = covariance[:numx, numx:]
+    sigmayx = covariance[numx:, :numx]
+    sigmayy = covariance[numx:, numx:]
 
-  # compute Partial Least Squares of cross covariance using
-  # SVD. Columns of U are coefficients for acts1, rows of V
-  # are coefficients for acts2.
-  U, S, V = linalg.svd(sigmaxy, full_matrices=False)
-  S = linalg.abs(S)
+    # compute Partial Least Squares of cross covariance using
+    # SVD. Columns of U are coefficients for acts1, rows of V
+    # are coefficients for acts2.
+    U, S, V = linalg.svd(sigmaxy, full_matrices=False)
+    S = linalg.abs(S)
 
-  # compute means
-  neuron_means1 = linalg.mean(acts1, axis=0, keepdims=True)
-  neuron_means2 = linalg.mean(acts2, axis=0, keepdims=True)
+    # compute means
+    neuron_means1 = linalg.mean(acts1, axis=0, keepdims=True)
+    neuron_means2 = linalg.mean(acts2, axis=0, keepdims=True)
 
-  # collect return values
-  return_dict = {}
-  return_dict['eigenvals'] = S
-  return_dict['neuron_coeffs1'] = U.T
-  return_dict['neuron_coeffs2'] = V
+    # collect return values
+    return_dict = {}
+    return_dict['eigenvals'] = S
+    return_dict['neuron_coeffs1'] = U.T
+    return_dict['neuron_coeffs2'] = V
 
-  pls_dirns1 = linalg.dot(U.T, (acts1 - neuron_means1)) + neuron_means1
-  pls_dirns2 = linalg.dot(V, (acts2 - neuron_means2)) + neuron_means2
+    pls_dirns1 = linalg.dot(U.T, (acts1 - neuron_means1)) + neuron_means1
+    pls_dirns2 = linalg.dot(V, (acts2 - neuron_means2)) + neuron_means2
 
-  return_dict['pls_dirns1'] = pls_dirns1
-  return_dict['pls_dirns2'] = pls_dirns2
+    return_dict['pls_dirns1'] = pls_dirns1
+    return_dict['pls_dirns2'] = pls_dirns2
 
 
-  return return_dict
+    return return_dict

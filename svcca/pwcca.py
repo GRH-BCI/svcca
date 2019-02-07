@@ -40,26 +40,26 @@ def compute_pwcca(acts1, acts2, epsilon=0., **kwargs):
 
     '''
     sresults = cca_core.get_cca_similarity(acts1, acts2, epsilon=epsilon,
-                       compute_dirns=False, compute_coefs=True, **kwargs)
+                                           compute_dirns=False, compute_coefs=True, **kwargs)
     if linalg.sum(sresults['x_idxs']) <= linalg.sum(sresults['y_idxs']):
         dirns = linalg.dot(sresults['coef_x'],
-                    (acts1[sresults['x_idxs']] - \
-                     sresults['neuron_means1'])) + sresults['neuron_means1']
+                           (acts1[sresults['x_idxs']] - \
+                            sresults['neuron_means1'])) + sresults['neuron_means1']
         coefs = sresults['cca_coef1']
-        acts = acts1
-        idxs = sresults['x_idxs']
+        acts  = acts1
+        idxs  = sresults['x_idxs']
     else:
-        dirns = linalg.dot(sresults['coef_y'],
-                    (acts1[sresults['y_idxs']] - \
-                     sresults['neuron_means2'])) + sresults['neuron_means2']
-        coefs = sresults['cca_coef2']
-        acts = acts2
-        idxs = sresults['y_idxs']
-    P, _ = linalg.qr(linalg.transpose(dirns))
-    weights = linalg.sum(
-        linalg.abs(linalg.dot(linalg.transpose(P), linalg.transpose(acts[idxs]))),
-        axis=1
-    )
-    weights = weights/linalg.sum(weights)
+        dirns   = linalg.dot(sresults['coef_y'],
+                           (acts1[sresults['y_idxs']] - \
+                            sresults['neuron_means2'])) + sresults['neuron_means2']
+        coefs   = sresults['cca_coef2']
+        acts    = acts2
+        idxs    = sresults['y_idxs']
+        P, _    = linalg.qr(linalg.transpose(dirns))
+        weights = linalg.sum(
+            linalg.abs(linalg.dot(linalg.transpose(P), linalg.transpose(acts[idxs]))),
+            axis=1
+        )
+        weights = weights/linalg.sum(weights)
 
     return linalg.sum(weights*coefs), weights, coefs
