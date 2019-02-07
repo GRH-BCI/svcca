@@ -1,3 +1,7 @@
+'''This module defines a class which contains reimplementations of some operations defined
+differently in numpy, cupy and PyTorch. It can be used to dispatch dynamically to the different
+frameworks depending on what kind of input data is passed.'''
+
 import numpy, cupy, torch
 
 
@@ -25,6 +29,7 @@ class Linalg(object):
 
     @staticmethod
     def transpose(arg):
+        '''Plain matrix transposition.'''
         if isinstance(arg, numpy.ndarray) or isinstance(arg, cupy.ndarray):
             return arg.T
         else:
@@ -32,6 +37,7 @@ class Linalg(object):
 
     @staticmethod
     def conj(arr):
+        '''(Complex) conjugation'''
         if isinstance(arr, torch.Tensor):
             return arr
         else:
@@ -39,6 +45,7 @@ class Linalg(object):
 
     @staticmethod
     def sum(array, axis=0, keepdims=False):
+        '''Summation over dimennsions.'''
         if isinstance(array, torch.Tensor):
             return array.sum(dim=axis, keepdim=keepdims)
         elif isinstance(array, numpy.ndarray):
@@ -48,6 +55,7 @@ class Linalg(object):
 
     @staticmethod
     def add_normal(array, multiplier):
+        '''Add normal-distributed noise to some array'''
         if isinstance(array, torch.Tensor):
             return array + torch.randn_like(array) * multiplier
         elif isinstance(array, numpy.ndarray):
@@ -267,4 +275,5 @@ class Linalg(object):
 
 
 import sys
+# make class instance act like a module
 sys.modules[__name__] = Linalg()

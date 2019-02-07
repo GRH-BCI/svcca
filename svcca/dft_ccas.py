@@ -1,7 +1,11 @@
+# MODIFICATION NOTICE AS PER §4 B) OF THE APACHE LICENSE, VERSION 2.0
+# THIS FILE WAS MODIFIED
+
 import cupy, numpy
 import pandas as pd
 import svcca.cca_core as cca_core
 import svcca.linalg as linalg
+
 
 
 def fft_resize(images, resize=False, new_size=None):

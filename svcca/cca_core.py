@@ -1,19 +1,23 @@
 # Copyright 2018 Google Inc.
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the Apache License, Version 2.0 (the 'License');
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
+# distributed under the License is distributed on an 'AS IS' BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
 
-"""
+# MODIFICATION NOTICE AS PER §4 B) OF THE APACHE LICENSE, VERSION 2.0
+# THIS FILE WAS MODIFIED
+
+
+'''
 The core code for applying Canonical Correlation Analysis to deep networks.
 
 This module contains the core functions to apply canonical correlation analysis
@@ -31,7 +35,7 @@ https://arxiv.org/abs/1706.05806
 https://arxiv.org/abs/1806.05759
 for full details.
 
-"""
+'''
 
 import svcca.linalg as linalg
 from numpy.linalg import LinAlgError
@@ -49,15 +53,15 @@ def positivedef_matrix_sqrt(array):
     Returns:
               sqrtarray: The matrix square root of array
     '''
-    w, v = linalg.eigh(array)
-    # #  A - linalg.dot(v, linalg.dot(linalg.diag(w), v.T))
-    wsqrt = linalg.sqrt(w)
+    w, v      = linalg.eigh(array)
+    #  A - linalg.dot(v, linalg.dot(linalg.diag(w), v.T))
+    wsqrt     = linalg.sqrt(w)
     sqrtarray = linalg.dot(v, linalg.dot(linalg.diag(wsqrt), linalg.transpose(linalg.conj(v))))
     return sqrtarray
 
 
 def remove_small(sigma_xx, sigma_xy, sigma_yx, sigma_yy, epsilon):
-  """Takes covariance between X, Y, and removes values of small magnitude.
+  '''Takes covariance between X, Y, and removes values of small magnitude.
 
   Args:
             sigma_xx: 2d numpy array, variance matrix for x
@@ -75,7 +79,7 @@ def remove_small(sigma_xx, sigma_xy, sigma_yx, sigma_yy, epsilon):
             sigma_yy_crop: 2d array with low y norm directions removed
             x_idxs: indexes of sigma_xx that were removed
             y_idxs: indexes of sigma_yy that were removed
-  """
+  '''
 
   x_diag = linalg.abs(linalg.diagonal(sigma_xx))
   y_diag = linalg.abs(linalg.diagonal(sigma_yy))
@@ -92,8 +96,8 @@ def remove_small(sigma_xx, sigma_xy, sigma_yx, sigma_yy, epsilon):
 
 
 def compute_ccas(sigma_xx, sigma_xy, sigma_yx, sigma_yy, epsilon,
-                 verbose=True):
-  """Main cca computation function, takes in variances and crossvariances.
+                 verbose=False):
+  '''Main cca computation function, takes in variances and crossvariances.
 
   This function takes in the covariances and cross covariances of X, Y,
   preprocesses them (removing small magnitudes) and outputs the raw results of
@@ -126,7 +130,7 @@ def compute_ccas(sigma_xx, sigma_xy, sigma_yx, sigma_yy, epsilon,
             x_idxs:       The indexes of the input sigma_xx that were pruned
                           by remove_small
             y_idxs:       Same as above but for sigma_yy
-  """
+  '''
 
   (sigma_xx, sigma_xy, sigma_yx, sigma_yy,
    x_idxs, y_idxs) = remove_small(sigma_xx, sigma_xy, sigma_yx, sigma_yy, epsilon)
@@ -139,27 +143,27 @@ def compute_ccas(sigma_xx, sigma_xy, sigma_yx, sigma_yy, epsilon,
             linalg.zeros_like(sigma_yy), x_idxs, y_idxs)
 
   if verbose:
-    print("adding eps to diagonal and taking inverse")
+    print('adding eps to diagonal and taking inverse')
   sigma_xx += epsilon * linalg.eye(numx)
   sigma_yy += epsilon * linalg.eye(numy)
-  inv_xx = linalg.pinv(sigma_xx)
-  inv_yy = linalg.pinv(sigma_yy)
+  inv_xx    = linalg.pinv(sigma_xx)
+  inv_yy    = linalg.pinv(sigma_yy)
 
   if verbose:
-    print("taking square root")
+    print('taking square root')
   invsqrt_xx = positivedef_matrix_sqrt(inv_xx)
   invsqrt_yy = positivedef_matrix_sqrt(inv_yy)
 
   if verbose:
-    print("dot products...")
+    print('dot products...')
   arr = linalg.dot(invsqrt_xx, linalg.dot(sigma_xy, invsqrt_yy))
 
   if verbose:
-    print("trying to take final svd")
+    print('trying to take final svd')
   u, s, v = linalg.svd(arr)
 
   if verbose:
-    print("computed everything!")
+    print('computed everything!')
 
   return [u, linalg.abs(s), v], invsqrt_xx, invsqrt_yy, x_idxs, y_idxs
 
@@ -187,9 +191,9 @@ def sum_threshold(array, threshold):
 def get_cca_similarity(acts1, acts2, epsilon=1e-10, threshold=0.98,
                        compute_coefs=True,
                        compute_dirns=False,
-                       verbose=True,
+                       verbose=False,
                        rescale=True):
-  """The main function for computing cca similarities.
+  '''The main function for computing cca similarities.
 
   This function computes the cca similarity between two sets of activations,
   returning a dict with the cca coefficients, a few statistics of the cca
@@ -221,6 +225,7 @@ def get_cca_similarity(acts1, acts2, epsilon=1e-10, threshold=0.98,
                            instead of store in memory.)
 
             verbose: Boolean, whether intermediate outputs are printed
+            rescale: Boolean, whether to scale the covariance matrices to stabilize CCA
 
   Returns:
             return_dict: A dictionary with outputs from the cca computations.
@@ -231,29 +236,28 @@ def get_cca_similarity(acts1, acts2, epsilon=1e-10, threshold=0.98,
                          if compute_dirns=False), and summary statistics. If
                          compute_dirns=True, the cca directions are also
                          computed.
-  """
+  '''
 
   # assert dimensionality equal
-  assert acts1.shape[1] == acts2.shape[1], "dimensions don't match"
+  assert acts1.shape[1] == acts2.shape[1], 'dimensions don\'t match'
   # check that acts1, acts2 are transposition
-  assert acts1.shape[0] < acts1.shape[1], ("input must be number of neurons "
-                                           "by datapoints")
+  assert acts1.shape[0] < acts1.shape[1], 'input must be number of neurons by datapoints'
   return_dict = {}
 
   numx = acts1.shape[0]
   numy = acts2.shape[0]
 
   covariance = linalg.cov(acts1, acts2)
-  sigmaxx = covariance[:numx, :numx]
-  sigmaxy = covariance[:numx, numx:]
-  sigmayx = covariance[numx:, :numx]
-  sigmayy = covariance[numx:, numx:]
+  sigmaxx    = covariance[:numx, :numx]
+  sigmaxy    = covariance[:numx, numx:]
+  sigmayx    = covariance[numx:, :numx]
+  sigmayy    = covariance[numx:, numx:]
 
   # rescale covariance to make cca computation more stable
   # CCA is invariant to linear transforms, so this should not make a difference semantically
   if rescale:
-    xmax = linalg.max(linalg.abs(sigmaxx))
-    ymax = linalg.max(linalg.abs(sigmayy))
+    xmax     = linalg.max(linalg.abs(sigmaxx))
+    ymax     = linalg.max(linalg.abs(sigmayy))
     sigmaxx /= xmax
     sigmayy /= ymax
     sigmaxy /= linalg.sqrt(xmax * ymax)
@@ -269,54 +273,52 @@ def get_cca_similarity(acts1, acts2, epsilon=1e-10, threshold=0.98,
     x_mask = linalg.dot(x_idxs.reshape((-1, 1)), x_idxs.reshape((1, -1)))
     y_mask = linalg.dot(y_idxs.reshape((-1, 1)), y_idxs.reshape((1, -1)))
 
-    return_dict["coef_x"] = linalg.transpose(u)
-    return_dict["invsqrt_xx"] = invsqrt_xx
-    return_dict["full_coef_x"] = linalg.zeros((numx, numx))
-    linalg.place(return_dict["full_coef_x"], x_mask,
-             return_dict["coef_x"])
-    return_dict["full_invsqrt_xx"] = linalg.zeros((numx, numx))
-    linalg.place(return_dict["full_invsqrt_xx"], x_mask,
-             return_dict["invsqrt_xx"])
+    return_dict['coef_x'] = linalg.transpose(u)
+    return_dict['invsqrt_xx'] = invsqrt_xx
+    return_dict['full_coef_x'] = linalg.zeros((numx, numx))
+    linalg.place(return_dict['full_coef_x'], x_mask,
+             return_dict['coef_x'])
+    return_dict['full_invsqrt_xx'] = linalg.zeros((numx, numx))
+    linalg.place(return_dict['full_invsqrt_xx'], x_mask,
+             return_dict['invsqrt_xx'])
 
-    return_dict["coef_y"] = v
-    return_dict["invsqrt_yy"] = invsqrt_yy
-    return_dict["full_coef_y"] = linalg.zeros((numy, numy))
-    linalg.place(return_dict["full_coef_y"], y_mask,
-             return_dict["coef_y"])
-    return_dict["full_invsqrt_yy"] = linalg.zeros((numy, numy))
-    linalg.place(return_dict["full_invsqrt_yy"], y_mask,
-             return_dict["invsqrt_yy"])
+    return_dict['coef_y'] = v
+    return_dict['invsqrt_yy'] = invsqrt_yy
+    return_dict['full_coef_y'] = linalg.zeros((numy, numy))
+    linalg.place(return_dict['full_coef_y'], y_mask,
+             return_dict['coef_y'])
+    return_dict['full_invsqrt_yy'] = linalg.zeros((numy, numy))
+    linalg.place(return_dict['full_invsqrt_yy'], y_mask,
+             return_dict['invsqrt_yy'])
 
     # compute means
-    neuron_means1 = linalg.mean(acts1, axis=0, keepdims=True)
-    neuron_means2 = linalg.mean(acts2, axis=0, keepdims=True)
-    return_dict["neuron_means1"] = neuron_means1
-    return_dict["neuron_means2"] = neuron_means2
+    neuron_means1                = linalg.mean(acts1, axis=0, keepdims=True)
+    neuron_means2                = linalg.mean(acts2, axis=0, keepdims=True)
+    return_dict['neuron_means1'] = neuron_means1
+    return_dict['neuron_means2'] = neuron_means2
 
   if compute_dirns:
     # orthonormal directions that are CCA directions
-    cca_dirns1 = linalg.dot(linalg.dot(return_dict["full_coef_x"],
-                               return_dict["full_invsqrt_xx"]),
+    cca_dirns1 = linalg.dot(linalg.dot(return_dict['full_coef_x'], return_dict['full_invsqrt_xx']),
                         (acts1 - neuron_means1)) + neuron_means1
-    cca_dirns2 = linalg.dot(linalg.dot(return_dict["full_coef_y"],
-                               return_dict["full_invsqrt_yy"]),
+    cca_dirns2 = linalg.dot(linalg.dot(return_dict['full_coef_y'], return_dict['full_invsqrt_yy']),
                         (acts2 - neuron_means2)) + neuron_means2
 
   # get rid of trailing zeros in the cca coefficients
   idx1 = sum_threshold(s, threshold)
   idx2 = sum_threshold(s, threshold)
 
-  return_dict["cca_coef1"] = s
-  return_dict["cca_coef2"] = s
-  return_dict["x_idxs"] = x_idxs
-  return_dict["y_idxs"] = y_idxs
+  return_dict['cca_coef1'] = s
+  return_dict['cca_coef2'] = s
+  return_dict['x_idxs']    = x_idxs
+  return_dict['y_idxs']    = y_idxs
   # summary statistics
-  return_dict["mean"] = (linalg.mean(s[:idx1]), linalg.mean(s[:idx2]))
-  return_dict["sum"] = (linalg.sum(s), linalg.sum(s))
+  return_dict['mean']      = (linalg.mean(s[:idx1]), linalg.mean(s[:idx2]))
+  return_dict['sum']       = (linalg.sum(s), linalg.sum(s))
 
   if compute_dirns:
-    return_dict["cca_dirns1"] = cca_dirns1
-    return_dict["cca_dirns2"] = cca_dirns2
+    return_dict['cca_dirns1'] = cca_dirns1
+    return_dict['cca_dirns2'] = cca_dirns2
 
   return return_dict
 
@@ -326,7 +328,7 @@ num_cca_trials = 5
 
 def robust_cca_similarity(acts1, acts2, threshold=0.98, normal_epsilon=1e-6,
                           compute_dirns=True, **kwargs):
-  """Calls get_cca_similarity multiple times while adding noise.
+  '''Calls get_cca_similarity multiple times while adding noise.
   This function is very similar to get_cca_similarity, and can be used if
   get_cca_similarity doesn't converge for some pair of inputs. This function
   adds some noise to the activations to help convergence.
@@ -341,11 +343,12 @@ def robust_cca_similarity(acts1, acts2, threshold=0.98, normal_epsilon=1e-6,
             threshold: float between 0, 1 used to get rid of trailing zeros in
                        the cca correlation coefficients to output more accurate
                        summary statistics of correlations.
-            epsilon: small float to help stabilize computations
+            normal_epsilon: small float to help stabilize computations by adding normal noise
             compute_dirns: boolean value determining whether actual cca
                            directions are computed. (For very large neurons and
                            datasets, may be better to compute these on the fly
                            instead of store in memory.)
+            kwargs: Other keyword arguments are forwarded to ``get_cca_similarity()``
   Returns:
             return_dict: A dictionary with outputs from the cca computations.
                          Contains neuron coefficients (combinations of neurons
@@ -355,7 +358,7 @@ def robust_cca_similarity(acts1, acts2, threshold=0.98, normal_epsilon=1e-6,
                          if compute_dirns=False), and summary statistics. If
                          compute_dirns=True, the cca directions are also
                          computed.
-  """
+  '''
 
   for trial in range(num_cca_trials):
     try:

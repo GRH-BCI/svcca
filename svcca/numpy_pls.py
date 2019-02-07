@@ -1,19 +1,22 @@
 # Copyright 2018 Google Inc.
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the Apache License, Version 2.0 (the 'License');
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
+# distributed under the License is distributed on an 'AS IS' BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
 
-"""
+# MODIFICATION NOTICE AS PER §4 B) OF THE APACHE LICENSE, VERSION 2.0
+# THIS FILE WAS MODIFIED
+
+'''
 An implementation of PLS (Partial Least Squares)
 using numpy. Written to apply to neural network activations.
 
@@ -24,12 +27,12 @@ https://arxiv.org/abs/1706.05806
 https://arxiv.org/abs/1806.05759
 for more background on the methods.
 
-"""
+'''
 
 import svcca.linalg as linalg
 
 def get_pls_similarity(acts1, acts2):
-  """
+  '''
 
   This function computes Partial Least Squares between two sets of activations.
 
@@ -62,12 +65,11 @@ def get_pls_similarity(acts1, acts2):
                          if compute_dirns=False), and summary statistics. If
                          compute_dirns=True, the cca directions are also
                          computed.
-  """
+  '''
   # assert dimensionality equal
-  assert acts1.shape[1] == acts2.shape[1], "dimensions don't match"
+  assert acts1.shape[1] == acts2.shape[1], 'dimensions don\'t match'
   # check that acts1, acts2 are transposition
-  assert acts1.shape[0] < acts1.shape[1], ("input must be number of neurons"
-                                           "by datapoints")
+  assert acts1.shape[0] < acts1.shape[1], 'input must be number of neurons by datapoints'
   return_dict = {}
 
   # compute covariance with numpy function for extra stability
@@ -91,15 +93,15 @@ def get_pls_similarity(acts1, acts2):
 
   # collect return values
   return_dict = {}
-  return_dict["eigenvals"] = S
-  return_dict["neuron_coeffs1"] = U.T
-  return_dict["neuron_coeffs2"] = V
+  return_dict['eigenvals'] = S
+  return_dict['neuron_coeffs1'] = U.T
+  return_dict['neuron_coeffs2'] = V
 
   pls_dirns1 = linalg.dot(U.T, (acts1 - neuron_means1)) + neuron_means1
   pls_dirns2 = linalg.dot(V, (acts2 - neuron_means2)) + neuron_means2
 
-  return_dict["pls_dirns1"] = pls_dirns1
-  return_dict["pls_dirns2"] = pls_dirns2
+  return_dict['pls_dirns1'] = pls_dirns1
+  return_dict['pls_dirns2'] = pls_dirns2
 
 
   return return_dict
