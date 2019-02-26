@@ -188,6 +188,7 @@ def sum_threshold(array, threshold):
         if linalg.sum(array[:i])/linalg.sum(array) >= threshold:
             return i
 
+
 def get_cca_similarity(acts1, acts2, epsilon=1e-10, threshold=0.98,
                        compute_coefs=True,
                        compute_dirns=False,
@@ -295,9 +296,11 @@ def get_cca_similarity(acts1, acts2, epsilon=1e-10, threshold=0.98,
 
     if compute_dirns:
         # orthonormal directions that are CCA directions
-        cca_dirns1 = linalg.dot(linalg.dot(return_dict['full_coef_x'], return_dict['full_invsqrt_xx']),
+        cca_dirns1 = linalg.dot(linalg.dot(return_dict['full_coef_x'],
+                                           return_dict['full_invsqrt_xx']),
                                 (acts1 - neuron_means1)) + neuron_means1
-        cca_dirns2 = linalg.dot(linalg.dot(return_dict['full_coef_y'], return_dict['full_invsqrt_yy']),
+        cca_dirns2 = linalg.dot(linalg.dot(return_dict['full_coef_y'],
+                                           return_dict['full_invsqrt_yy']),
                                 (acts2 - neuron_means2)) + neuron_means2
 
     # get rid of trailing zeros in the cca coefficients
@@ -356,13 +359,13 @@ def robust_cca_similarity(acts1, acts2, threshold=0.98, normal_epsilon=1e-6,
                            computed.
     '''
 
-  for trial in range(num_cca_trials):
-      try:
-          return_dict = get_cca_similarity(acts1, acts2, threshold=threshold,
-                                           compute_dirns=compute_dirns, **kwargs)
-          return return_dict
-      except (LinAlgError, RuntimeError, FloatingPointError):
-          acts1 = linalg.add_normal(acts1 * 1e-1, normal_epsilon)
-          acts2 = linalg.add_normal(acts2 * 1e-1, normal_epsilon)
-          if trial + 1 == num_cca_trials:
-              raise
+    for trial in range(num_cca_trials):
+        try:
+            return_dict = get_cca_similarity(acts1, acts2, threshold=threshold,
+                                             compute_dirns=compute_dirns, **kwargs)
+            return return_dict
+        except (LinAlgError, RuntimeError, FloatingPointError):
+            acts1 = linalg.add_normal(acts1 * 1e-1, normal_epsilon)
+            acts2 = linalg.add_normal(acts2 * 1e-1, normal_epsilon)
+            if trial + 1 == num_cca_trials:
+                raise
