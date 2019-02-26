@@ -221,14 +221,15 @@ class Linalg(object):
             if a.ndimension() < 1 or b.ndimension() < 1:
                 raise ValueError('Torch matmul does not work with scalars.')
             if a.ndimension() > 2 and b.ndimension() > 2:
-                raise ValueError('Torch matmul with multidimensional matrices currently unsupported.')
+                raise ValueError('Torch matmul with multidimensional '
+                                 'matrices currently unsupported.')
             return torch.matmul(a.to(dtype=torch.float32), b.to(dtype=torch.float32), out=out)
         else:
             return cupy.dot(a, b, out=out)
 
     @staticmethod
     def eigh(array):
-        if isinstance(arry, numpy.ndarray):
+        if isinstance(array, numpy.ndarray):
             w, v = numpy.linalg.eigh(array)
         if isinstance(array, torch.Tensor):
             w, v = torch.symeig(array, eigenvectors=True, upper=False)
@@ -238,7 +239,7 @@ class Linalg(object):
 
     @staticmethod
     def pinv(array):
-        if isinstance(a, numpy.ndarray):
+        if isinstance(array, numpy.ndarray):
             return numpy.linalg.pinv(array)
         elif isinstance(array, torch.Tensor):
             return torch.pinverse(array)
