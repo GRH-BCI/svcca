@@ -61,24 +61,24 @@ def positivedef_matrix_sqrt(array):
 
 
 def remove_small(sigma_xx, sigma_xy, sigma_yx, sigma_yy, epsilon):
-  '''Takes covariance between X, Y, and removes values of small magnitude.
+    '''Takes covariance between X, Y, and removes values of small magnitude.
 
-    Args:
-              sigma_xx: 2d numpy array, variance matrix for x
-              sigma_xy: 2d numpy array, crossvariance matrix for x,y
-              sigma_yx: 2d numpy array, crossvariance matrixy for x,y,
-                        (conjugate) transpose of sigma_xy
-              sigma_yy: 2d numpy array, variance matrix for y
-              epsilon : cutoff value for norm below which directions are thrown
-                         away
+      Args:
+                sigma_xx: 2d numpy array, variance matrix for x
+                sigma_xy: 2d numpy array, crossvariance matrix for x,y
+                sigma_yx: 2d numpy array, crossvariance matrixy for x,y,
+                          (conjugate) transpose of sigma_xy
+                sigma_yy: 2d numpy array, variance matrix for y
+                epsilon : cutoff value for norm below which directions are thrown
+                           away
 
-    Returns:
-              sigma_xx_crop: 2d array with low x norm directions removed
-              sigma_xy_crop: 2d array with low x and y norm directions removed
-              sigma_yx_crop: 2d array with low x and y norm directiosn removed
-              sigma_yy_crop: 2d array with low y norm directions removed
-              x_idxs: indexes of sigma_xx that were removed
-              y_idxs: indexes of sigma_yy that were removed
+      Returns:
+                sigma_xx_crop: 2d array with low x norm directions removed
+                sigma_xy_crop: 2d array with low x and y norm directions removed
+                sigma_yx_crop: 2d array with low x and y norm directiosn removed
+                sigma_yy_crop: 2d array with low y norm directions removed
+                idxs: indexes of sigma_xx that were removed
+                y_idxs: indexes of sigma_yy that were removed
     '''
 
     x_diag = linalg.abs(linalg.diagonal(sigma_xx))
@@ -169,18 +169,18 @@ def compute_ccas(sigma_xx, sigma_xy, sigma_yx, sigma_yy, epsilon,
 
 
 def sum_threshold(array, threshold):
-  '''Computes threshold index of decreasing nonnegative array by summing.
+    '''Computes threshold index of decreasing nonnegative array by summing.
 
-    This function takes in a decreasing array nonnegative floats, and a
-    threshold between 0 and 1. It returns the index i at which the sum of the
-    array up to i is threshold*total mass of the array.
+      This function takes in a decreasing array nonnegative floats, and a
+      threshold between 0 and 1. It returns the index i at which the sum of the
+      array up to i is threshold*total mass of the array.
 
-    Args:
-              array: a 1d numpy array of decreasing, nonnegative floats
-              threshold: a number between 0 and 1
+      Args:
+                array: a 1d numpy array of decreasing, nonnegative floats
+                threshold: a number between 0 and 1
 
-    Returns:
-              i: index at which linalg.sum(array[:i]) >= threshold
+      Returns:
+                i: index at which linalg.sum(array[:i]) >= threshold
     '''
     assert (threshold >= 0) and (threshold <= 1), 'incorrect threshold'
 
