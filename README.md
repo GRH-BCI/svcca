@@ -2,7 +2,9 @@
 
 This is a Python 3 port of the original SVCCA code so that it runs with Numpy,
 CuPy and PyTorch (the latter two on the GPU). I also made this a `setuptools`
-package so you can install it environment-wide
+package so you can install it environment-wide.
+
+For tutorials on how to use SVCCA, consult the [original repo](https://github.com/google/svcca/tree/master/tutorials).
 
 ## Installation
 Run `pip install -e .` or `python setup.py install` to install locally, or use
@@ -12,7 +14,7 @@ install again.
 
 In a `requirements.txt` file, you can list this repository as a dependency like this (no PyPi for the moment)
 ```
-git+https://github.com/themightyoarfish/svcca-gpu#egg=svcca
+svcca @ git+ssh://git@github.com/themightyoarfish/svcca-gpu
 ```
 
 ## Limitations
