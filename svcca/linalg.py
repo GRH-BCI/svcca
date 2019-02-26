@@ -50,24 +50,24 @@ class Linalg(object):
         }
 
     @staticmethod
-    def transpose(arg):
+    def transpose(array):
         '''Plain matrix transposition.'''
-        if isinstance(arg, numpy.ndarray):
-            return arg.T
-        elif isinstance(arg, cupy.ndarray):
-            return arg.T
+        if isinstance(array, numpy.ndarray):
+            return array.T
+        elif isinstance(array, cupy.ndarray):
+            return array.T
         else:
-            return arg.t()
+            return array.t()
 
     @staticmethod
-    def conj(arr):
+    def conj(array):
         '''(Complex) conjugation'''
-        if isinstance(arr, numpy.ndarray):
-            return arr.conj()
-        elif isinstance(arr, torch.Tensor):
-            return arr
+        if isinstance(array, numpy.ndarray):
+            return array.conj()
+        elif isinstance(array, torch.Tensor):
+            return array
         else:
-            return arr.conj()
+            return array.conj()
 
     @staticmethod
     def sum(array, axis=0, keepdims=False):
@@ -90,22 +90,22 @@ class Linalg(object):
             return cupy + cupy.random.normal(size=array.shape) * multiplier
 
     @staticmethod
-    def svd(arr, full_matrices=True, compute_uv=True):
-        if isinstance(arr, numpy.ndarray):
-            return numpy.linalg.svd(arr, full_matrices=full_matrices, compute_uv=compute_uv)
-        elif isinstance(arr, torch.Tensor):
-            return torch.svd(arr, some=not full_matrices, compute_uv=compute_uv)
+    def svd(array, full_matrices=True, compute_uv=True):
+        if isinstance(array, numpy.ndarray):
+            return numpy.linalg.svd(array, full_matrices=full_matrices, compute_uv=compute_uv)
+        elif isinstance(array, torch.Tensor):
+            return torch.svd(array, some=not full_matrices, compute_uv=compute_uv)
         else:
-            return cupy.linalg.svd(arr, full_matrices=full_matrices, compute_uv=compute_uv)
+            return cupy.linalg.svd(array, full_matrices=full_matrices, compute_uv=compute_uv)
 
     @staticmethod
-    def fft2(arr, axes):
-        if isinstance(arr, numpy.ndarray):
-            return numpy.fft.fft2(arr.astype('complex64'), axes=axes)
-        elif isinstance(arr, torch.Tensor):
+    def fft2(array, axes):
+        if isinstance(array, numpy.ndarray):
+            return numpy.fft.fft2(array.astype('complex64'), axes=axes)
+        elif isinstance(array, torch.Tensor):
             raise ValueError('Complex Fourier does not work with PyTorch')
         else:
-            return cupy.fft.fft2(arr.astype('complex64'), axes=axes)
+            return cupy.fft.fft2(array.astype('complex64'), axes=axes)
 
     @staticmethod
     def ifft2(*args):
@@ -149,13 +149,13 @@ class Linalg(object):
                 return torch.mean(*args, axis, keepdim=keepdims)
 
     @staticmethod
-    def place(arr, mask, vals):
-        if isinstance(arr, numpy.ndarray):
-            return numpy.place(arr, mask, vals)
-        elif isinstance(arr, cupy.ndarray):
-            return Linalg.cupy_place(arr, mask, vals)
+    def place(array, mask, vals):
+        if isinstance(array, numpy.ndarray):
+            return numpy.place(array, mask, vals)
+        elif isinstance(array, cupy.ndarray):
+            return Linalg.cupy_place(array, mask, vals)
         else:
-            return Linalg.torch_place(arr, mask, vals)
+            return Linalg.torch_place(array, mask, vals)
 
     @staticmethod
     def cupy_place(arr, mask, vals):
@@ -231,7 +231,7 @@ class Linalg(object):
     def eigh(array):
         if isinstance(array, numpy.ndarray):
             w, v = numpy.linalg.eigh(array)
-        if isinstance(array, torch.Tensor):
+        elif isinstance(array, torch.Tensor):
             w, v = torch.symeig(array, eigenvectors=True, upper=False)
         elif isinstance(array, cupy.ndarray):
             w, v = cupy.linalg.eigh(array)
