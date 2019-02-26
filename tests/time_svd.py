@@ -1,7 +1,6 @@
 import numpy as np
 import cupy
 import time
-from
 np.random.seed(0)
 
 k = 1000
