@@ -7,6 +7,15 @@ package so you can install it environment-wide.
 For tutorials on how to use SVCCA, consult the [original repo](https://github.com/google/svcca/tree/master/tutorials).
 
 ## Installation
+
+### Prerequisites
+
+If you want to use [PyTorch](https://github.com/pytorch/pytorch#installation) or
+[CuPy](https://github.com/cupy/cupy/#installation) with this package, you need
+to install them separately. The only other dependency is Numpy, which is
+automatically installed if not present.
+
+### Installation
 Run `pip install -e .` or `python setup.py install` to install locally, or use
 `python setup.py develop` to only install links to the source, so any editions
 made will immediately be reflected in the installed package without having to
