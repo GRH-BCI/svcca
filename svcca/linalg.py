@@ -272,7 +272,7 @@ class Linalg(object):
     def __getattr__(self, name):
         # XXX: should make sure the method exists in all frameworks here, but this is
         # not so simple if we don't require them all to be installed.
-        
+
         def wrapped(*args, **kwargs):
             if name in self.overloads:
                 return self.overloads[name](*args, **kwargs)
@@ -282,13 +282,17 @@ class Linalg(object):
                 self._method_getter = Linalg.get_torch
             elif isinstance(args[0], cupy.ndarray):
                 self._method_getter = Linalg.get_cupy
-            try:
-                # TODO: Check if TypeError is still thrown if torch is not imported
-                return self._method_getter(name)(*args,
-                                                 **kwargs,
-                                                 device=torch.cuda.current_device())
-            except TypeError:
+
+            if has_torch and isinstance(args[0], torch.Tensor):
+                try:
+                    return self._method_getter(name)(*args,
+                                                    **kwargs,
+                                                    device=torch.cuda.current_device())
+                except TypeError:
+                    return self._method_getter(name)(*args, **kwargs)
+            else:
                 return self._method_getter(name)(*args, **kwargs)
+
 
         return wrapped
 
