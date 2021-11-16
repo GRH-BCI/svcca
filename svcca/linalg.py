@@ -46,7 +46,8 @@ class Linalg(object):
             'fftfreq': Linalg.fftfreq,
             'flatnonzero': Linalg.flatnonzero,
             'add_normal': Linalg.add_normal,
-            'sum': Linalg.sum
+            'sum': Linalg.sum,
+            'max': Linalg.max,
         }
 
     @staticmethod
@@ -245,6 +246,15 @@ class Linalg(object):
             return torch.pinverse(array)
         else:
             return cupy.linalg.pinv(array)
+
+    @staticmethod
+    def max(array):
+        if isinstance(array, numpy.ndarray):
+            return numpy.max(array)
+        elif isinstance(array, torch.Tensor):
+            return torch.max(array)
+        else:
+            return cupy.max(array)
 
     @staticmethod
     def method_exists(name):
