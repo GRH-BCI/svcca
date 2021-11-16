@@ -276,12 +276,12 @@ class Linalg(object):
         def wrapped(*args, **kwargs):
             if name in self.overloads:
                 return self.overloads[name](*args, **kwargs)
-            elif isinstance(args[0], numpy.ndarray):
-                self._method_getter = Linalg.get_numpy
-            elif isinstance(args[0], torch.Tensor):
+            elif has_torch and isinstance(args[0], torch.Tensor):
                 self._method_getter = Linalg.get_torch
-            elif isinstance(args[0], cupy.ndarray):
+            elif has_cupy and isinstance(args[0], cupy.ndarray):
                 self._method_getter = Linalg.get_cupy
+            else:
+                self._method_getter = Linalg.get_numpy
 
             if has_torch and isinstance(args[0], torch.Tensor):
                 try:
