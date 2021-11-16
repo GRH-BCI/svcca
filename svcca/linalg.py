@@ -9,7 +9,7 @@ has_cupy = False
 
 try:
     import cupy
-    has_torch = True
+    has_cupy = True
 except ImportError:
     warnings.warn('Cupy not found.')
 
