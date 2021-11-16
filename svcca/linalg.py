@@ -247,18 +247,6 @@ class Linalg(object):
             return cupy.linalg.pinv(array)
 
     @staticmethod
-    def method_exists(name):
-        exists = [False, False, False]
-        if has_torch and hasattr(torch, name):
-            exists[0] = True
-        if hasattr(numpy, name) or hasattr(numpy.linalg, name):
-            exists[1] = True
-        if has_cupy and (hasattr(cupy, name) or hasattr(cupy.linalg, name)):
-            exists[2] = True
-
-        return all(exists)
-
-    @staticmethod
     def get_numpy(name):
         if hasattr(numpy, name):
             return getattr(numpy, name)
@@ -282,10 +270,9 @@ class Linalg(object):
             return getattr(torch, name)
 
     def __getattr__(self, name):
-
-        if not Linalg.method_exists(name):
-            raise ValueError(f'`{name}()` is not available in all frameworks')
-
+        # XXX: should make sure the method exists in all frameworks here, but this is
+        # not so simple if we don't require them all to be installed.
+        
         def wrapped(*args, **kwargs):
             if name in self.overloads:
                 return self.overloads[name](*args, **kwargs)
