@@ -1,3 +1,8 @@
+# About this fork of the fork
+
+I made some changes so this should actually work now. No promises.
+Original readme below.
+
 # About this fork
 
 This is a Python 3 port of the original SVCCA code so that it runs with Numpy,
